@@ -37,28 +37,34 @@ m_limits_scale = 4   # multiply all of the above for what should actually be wri
 MLS = m_limits_scale
 
 CURR_SERVO_POS = [0 for i in m_limits]
-AVE_SERVO_POS = [servo_setting[3] for servo_setting in m_limits]  # Start at nominal for each
+AVE_SERVO_POS = [servo_setting[3]*MLS for servo_setting in m_limits]  # Start at nominal for each
 
-print(CURR_SERVO_POS)
-print(AVE_SERVO_POS)
+#print(CURR_SERVO_POS)
+#print(AVE_SERVO_POS)
 
 
 servo = maestro.Controller(device=12)
 
-ACCEL = 5
+ACCEL = 15
+
+def reset_ave_servo_pos():
+    global AVE_SERVO_POS
+    AVE_SERVO_POS = [0 for i in m_limits]
 
 # Set software limits to be the same as the hardware limits
 for i in range(len(m_limits)):
     #servo.setRange(i, (m_limits[i][0]+1)*MLS, (m_limits[0][1]-1)*MLS)
     servo.setAccel(i, ACCEL)
+    servo.setSpeed(i, 100)
     
-def wait_while_moving(channel=0):
-    #print("waiting")
-    while servo.isMoving(channel):
-        time.sleep(0.1)
-        #print(servo.getPosition(channel))
-    #print("done waiting")
-    return
+    
+# def wait_while_moving(channel=0):
+#     #print("waiting")
+#     while servo.isMoving(channel):
+#         time.sleep(0.1)
+#         #print(servo.getPosition(channel))
+#     #print("done waiting")
+#     return
         
 #print(servo.getMin(0), servo.getMax(0))
 #servo.setAccel(0,5)      #set servo 0 acceleration to 4
@@ -71,6 +77,7 @@ def wait_while_moving(channel=0):
 #wait_while_moving(1)
 
 def reset_all_joints():
+    reset_ave_servo_pos()
     for servo_num in range(len(m_limits)):
         joint_nom = int(m_limits[servo_num][3]*MLS)
         servo.setTarget(servo_num, joint_nom)
@@ -81,25 +88,68 @@ def set_all_joints_temp():
         servo.setTarget(servo_num, joint_nom)
 
 
-def get_all_joints_pos():
-    for servo_num in range(len(m_limits)):
-        CURR_SERVO_POS[servo_num] = servo.getPosition()
+POS_AVERAGE_COUNT = 3
 
-def is_moving():
+def get_all_joints_pos():
+    global CURR_SERVO_POS, AVE_SERVO_POS
+    for servo_num in range(len(m_limits)):
+        curr_pos = servo.getPosition(servo_num)
+        ave_pos = (AVE_SERVO_POS[servo_num]*POS_AVERAGE_COUNT + curr_pos)/(POS_AVERAGE_COUNT+1)
+        #print("curr_pos", curr_pos)
+        CURR_SERVO_POS[servo_num] = curr_pos
+        AVE_SERVO_POS[servo_num] = ave_pos
+
+
+#def update_ave_joints_pos():
+#    global CURR_SERVO_POS, AVE_SERVO_POS
+#    AVE_SERVO_POS = CURR_SERVO_POS.copy()
+#    #FIXME: this should be average, not just copy
+
+
+MOVING_THRESH = 25
+
+get_all_joints_pos()
+#update_ave_joints_pos()
+
+
+def is_moving(thresh = MOVING_THRESH):
+    global CURR_SERVO_POS, AVE_SERVO_POS
+    #update_ave_joints_pos()
+    get_all_joints_pos()
     squared_sum = 0
     for servo_num in range(len(m_limits)):
-        squared_sum = (CURR_SERVO_POS - AVE)
+        squared_sum += (CURR_SERVO_POS[servo_num] - AVE_SERVO_POS[servo_num])**2
+    moving_amount = np.sqrt(squared_sum)
+    #print("moving amount", moving_amount)
+    #print("CURR_SERVO_POS", CURR_SERVO_POS)
+    #print("AVE_SERVO_POS", AVE_SERVO_POS)
+    #update_ave_joints_pos()
+    if moving_amount >= thresh:
+        return True
+    else:
+        return False 
 
 import sys
 
-reset_all_joints()
-time.sleep(3)
-#set_all_joints_temp()
-#time.sleep(3)
-#reset_all_joints()
-sys.exit()
+def wait_while_moving(thresh = MOVING_THRESH, delay = 0.05):
+    moving = is_moving(thresh)
+    while moving:
+        time.sleep(delay)
+        moving = is_moving(thresh)
+        
+
+def move_joint_rel(leg=0, joint=0, degrees=10, wait=True):
+    reset_ave_servo_pos()
+    servo_num = leg*3+joint
+    curr_pos = CURR_SERVO_POS[servo_num]
+    angle_scale = 476.25*4/90  # steps / degrees
+    joint_dir = m_limits[servo_num][2]
+    new_pos = int(curr_pos + joint_dir*degrees*angle_scale)
+    servo.setTarget(servo_num, new_pos)
+    if wait: wait_while_moving()
 
 def move_joint(leg=0, joint=0, amount=50, wait=True):  # Amount goes 0 to 100
+    reset_ave_servo_pos()
     servo_num = leg*3+joint
         
     joint_min = m_limits[servo_num][0]*MLS
@@ -114,7 +164,7 @@ def move_joint(leg=0, joint=0, amount=50, wait=True):  # Amount goes 0 to 100
     print(joint_min, joint_max, joint_dir, target)
     
     servo.setTarget(servo_num, target)
-    if wait: wait_while_moving(servo_num)
+    if wait: wait_while_moving()
 
 def move_ankle_up(leg=0, amount=50, wait=False):
     move_joint(leg, 0, amount, wait)
@@ -127,6 +177,22 @@ def move_leg_fwd(leg=0, amount=50, wait=False):
     
 
 
+
+reset_all_joints()
+#time.sleep(1)
+wait_while_moving()
+print("next")
+move_leg_fwd(0, 50)
+wait_while_moving()
+#move_leg_fwd(0, 0)
+#wait_while_moving()
+move_joint_rel(0,0,90,wait=False)
+move_joint_rel(5,0,-10)
+
+sys.exit()
+
+
+#FIXME: moving detection is not working.
 
 
 def legs_set_position(legs, forward=50, height=50, ankle=50, delay=0.0):
