@@ -1,6 +1,10 @@
 import maestro
 import time
 import numpy as np
+import sys
+
+
+# Define Motor limits and characteristics
 
 m_limits = (
     
@@ -33,62 +37,37 @@ m_limits = (
     (688, 1248, 1, 780.75),
     )
 
+
+############# Other Definitions ################
+
+ACCEL = 15   # Global acceleration setting for all servos
+SERVO_SPEED = 100
+POS_AVERAGE_COUNT = 3   # Number of position readings to average together
 m_limits_scale = 4   # multiply all of the above for what should actually be written to the Maestro (not sure why)
 MLS = m_limits_scale
+MOVING_THRESH = 25  # How far away is "close-enough" to be still-moving
 
 CURR_SERVO_POS = [0 for i in m_limits]
 AVE_SERVO_POS = [servo_setting[3]*MLS for servo_setting in m_limits]  # Start at nominal for each
 
-#print(CURR_SERVO_POS)
-#print(AVE_SERVO_POS)
 
-
+# Global servo control
 servo = maestro.Controller(device=12)
 
-ACCEL = 15
 
-def reset_ave_servo_pos():
-    global AVE_SERVO_POS
-    AVE_SERVO_POS = [0 for i in m_limits]
 
 # Set software limits to be the same as the hardware limits
 for i in range(len(m_limits)):
     #servo.setRange(i, (m_limits[i][0]+1)*MLS, (m_limits[0][1]-1)*MLS)
     servo.setAccel(i, ACCEL)
-    servo.setSpeed(i, 100)
+    servo.setSpeed(i, SERVO_SPEED)
+
+
+
     
-    
-# def wait_while_moving(channel=0):
-#     #print("waiting")
-#     while servo.isMoving(channel):
-#         time.sleep(0.1)
-#         #print(servo.getPosition(channel))
-#     #print("done waiting")
-#     return
-        
-#print(servo.getMin(0), servo.getMax(0))
-#servo.setAccel(0,5)      #set servo 0 acceleration to 4
-
-
-#servo.setTarget(1,m_limits[1][0]*MLS)  #set servo to move to center position
-#wait_while_moving(1)
-
-#servo.setTarget(1,m_limits[1][1]*MLS)  #set servo to move to center position
-#wait_while_moving(1)
-
-def reset_all_joints():
-    reset_ave_servo_pos()
-    for servo_num in range(len(m_limits)):
-        joint_nom = int(m_limits[servo_num][3]*MLS)
-        servo.setTarget(servo_num, joint_nom)
-
-def set_all_joints_temp():
-    for servo_num in range(len(m_limits)):
-        joint_nom = int(m_limits[servo_num][3]*MLS-250)
-        servo.setTarget(servo_num, joint_nom)
-
-
-POS_AVERAGE_COUNT = 3
+def reset_ave_servo_pos():
+    global AVE_SERVO_POS
+    AVE_SERVO_POS = [0 for i in m_limits]
 
 def get_all_joints_pos():
     global CURR_SERVO_POS, AVE_SERVO_POS
@@ -100,16 +79,13 @@ def get_all_joints_pos():
         AVE_SERVO_POS[servo_num] = ave_pos
 
 
-#def update_ave_joints_pos():
-#    global CURR_SERVO_POS, AVE_SERVO_POS
-#    AVE_SERVO_POS = CURR_SERVO_POS.copy()
-#    #FIXME: this should be average, not just copy
+def reset_all_joints():
+    reset_ave_servo_pos()
+    for servo_num in range(len(m_limits)):
+        joint_nom = int(m_limits[servo_num][3]*MLS)
+        servo.setTarget(servo_num, joint_nom)
 
 
-MOVING_THRESH = 25
-
-get_all_joints_pos()
-#update_ave_joints_pos()
 
 
 def is_moving(thresh = MOVING_THRESH):
@@ -129,7 +105,6 @@ def is_moving(thresh = MOVING_THRESH):
     else:
         return False 
 
-import sys
 
 def wait_while_moving(thresh = MOVING_THRESH, delay = 0.05):
     moving = is_moving(thresh)
@@ -166,6 +141,26 @@ def move_joint(leg=0, joint=0, amount=50, wait=True):  # Amount goes 0 to 100
     servo.setTarget(servo_num, target)
     if wait: wait_while_moving()
 
+
+SERVO_SCALE = 476.25*MLS/90.0   # steps / degrees
+
+def move_joint_angle(leg=0, joint=0, angle=0, wait=False): 
+    reset_ave_servo_pos()
+    servo_num = leg*3+joint
+    
+    #if joint == 0:    # I messed up definition somewhere
+    #    angle = angle + 90
+    joint_dir = m_limits[servo_num][2]
+    joint_nom = int(m_limits[servo_num][3]*MLS)   # this corresponds to zero degrees
+
+    target = int(joint_nom + joint_dir*angle*SERVO_SCALE)  #FIXME: direction?
+
+    print("leg, joint, angle, joint_dir, joint_nom, target:", leg, joint, angle, joint_dir, joint_nom, target)
+    servo.setTarget(servo_num, target)
+    if wait: wait_while_moving()
+
+
+
 def move_ankle_up(leg=0, amount=50, wait=False):
     move_joint(leg, 0, amount, wait)
 
@@ -178,22 +173,7 @@ def move_leg_fwd(leg=0, amount=50, wait=False):
 
 
 
-reset_all_joints()
-#time.sleep(1)
-wait_while_moving()
-print("next")
-move_leg_fwd(0, 50)
-wait_while_moving()
-#move_leg_fwd(0, 0)
-#wait_while_moving()
-move_joint_rel(0,0,90,wait=False)
-move_joint_rel(5,0,-10)
-
-sys.exit()
-
-
-#FIXME: moving detection is not working.
-
+################ All Legs functions ##################
 
 def legs_set_position(legs, forward=50, height=50, ankle=50, delay=0.0):
     for leg in legs:
@@ -222,7 +202,6 @@ def legs_step_bck(legs, delay=0.5):
         move_leg_up(leg, 50)
         time.sleep(delay)
 
-
 def legs_up(legs, amount = 100, delay=0.5):
     for leg in legs:
         move_ankle_up(leg,amount)
@@ -245,127 +224,152 @@ def legs_move_fwd(legs, amount=0):
 
     
  
-def walking_5(count=1):
-    for i in range(count):
-        legs1 = (1,4,2,5)
-        legs2 = (2,3)   # 75, (2,3) almost falls over; 50, (2,3) is ok
-        legs_step_fwd((0,3,1,4,2,5), 40)  # 25 falls over; 50 is ok. 75 is ok; 100 is ok
-        time.sleep(0.5)
-        #legs_up(legs2) #, 50)
-        # time.sleep(1)
-        legs_set_position(legs2, 50, 100, 0)
-        time.sleep(0.5)
-        legs_move_fwd(legs1,75)   # 85, falls over
-        time.sleep(0.5)
-        #legs_step_fwd((0,3,1,4,2,5), 50)  # 25 falls over; 50 is ok. 75 is ok; 100 is ok
-    legs_step_fwd((0,3,1,4,2,5), 40)  # 25 falls over; 50 is ok. 75 is ok; 100 is ok
-        
-        
+
+
     
     
-#walking_5(4)
-#legs_reset((0,5,1,4,2,3))
-#time.sleep(1)
-# for count in range(3):
-#     legs_step_fwd((0, 5, 1, 4, 2, 3), 50, delay=1)         
-#     time.sleep(2)
-#     #legs_step_fwd((1, 4, ), 0)
-#     legs_move_fwd((0,5,1,4,2,3), 0)
-#     legs_step_fwd((0, 5, 1, 4, 2, 3), 50, delay=1)         
-#     #legs_step_bck((0,))
-
-#legs = (0,2,4)
-#legs_up(legs)
-#time.sleep(1)
-#legs_down(legs)
 
 
 
-
-
+########### Calculate Angles / Positions of legs #################
 
 import numpy as np
 
-def inverse_kinematics(x, y, L1, L2):
+
+
+
+# FIXME: z-axis should be facing *away* from the top of Arachne (so 0 degrees is straight down)
+
+def inverse_kinematics(x, y, z, L1, L2):
     """
-    Computes theta1 and theta2 given foot position (x, y) and link lengths (L1, L2).
+    Computes theta0, theta1, and theta2 given foot position (x, y, z) and link lengths (L1, L2).
     Angles are returned in degrees.
     """
-    r2 = x**2 + y**2  # Squared distance to foot position
+    # Compute theta0 (rotation in the y-x plane)
+    theta0 = np.degrees(np.arctan2(y, x))
+    
+    z = -z  # RKD
+    
+    # Compute the projected distance in the y-z plane
+    r = np.sqrt(y**2 + x**2)
+    s = np.sqrt(r**2 + z**2)  # Total length from base to foot
     
     # Compute theta2 using the law of cosines
-    cos_theta2 = (r2 - L1**2 - L2**2) / (2 * L1 * L2)
+    cos_theta2 = (s**2 - L1**2 - L2**2) / (2 * L1 * L2)
     if abs(cos_theta2) > 1:
         raise ValueError("Position out of reach")
-    theta2 = np.arccos(cos_theta2)
+    theta2 = np.degrees(-np.arccos(cos_theta2)) + 90 # RKD
+    #theta2 = -theta2  # Adjust to match forward kinematics convention
+    # Compute theta1 using the law o#f cosines
+    cos_beta = (s**2 + L1**2 - L2**2) / (2 * L1 * s)
+    if abs(cos_beta) > 1:
+        raise ValueError("Position out of reach")
+    beta = np.arccos(cos_beta) #+ np.pi/2  # Axis incorrectly specified???
+    alpha = np.arctan2(z, r)
+    theta1 = -np.degrees(alpha - beta)
     
-    # Compute theta1
-    alpha = np.arctan2(y, x)
-    beta = np.arccos((r2 + L1**2 - L2**2) / (2 * L1 * np.sqrt(r2)))
-    theta1 = alpha - beta
+    return theta0, theta1, theta2
+
+def forward_kinematics(theta0, theta1, theta2, L1, L2):
+    """
+    Computes foot position (y, x, z) given joint angles (theta0, theta1, theta2) and link lengths (L1, L2).
+    Angles are assumed to be in degrees.
+    """
+    theta2 = theta2 - 90  # RKD
+    theta0, theta1, theta2 = np.radians([theta0, theta1, theta2])
     
-    return np.degrees(theta1), np.degrees(theta2)
+    # Compute position in the sagittal plane (y'-z plane)
+    r = L1 * np.cos(theta1) + L2 * np.cos(theta1 + theta2)
+    z = L1 * np.sin(theta1) + L2 * np.sin(theta1 + theta2)
+    
+    # Rotate into 3D space
+    x = r * np.cos(theta0)
+    y = r * np.sin(theta0)
+    
+    return x, y, z
 
 # Example usage
+L1, L2 = 89, 122
+# theta0, theta1, theta2 = 45, 0, -90
+# print(theta0, theta1, theta2)
+# x, y, z = forward_kinematics(theta0, theta1, theta2, L1, L2)
+# print(f"Forward Kinematics Result: x = {x:.2f}, y = {y:.2f}, z = {z:.2f}")
+
+# theta0_inv, theta1_inv, theta2_inv = inverse_kinematics(x, y, z, L1, L2)
+# print(f"Inverse Kinematics Result: Theta0 = {theta0_inv:.2f}, Theta1 = {theta1_inv:.2f}, Theta2 = {theta2_inv:.2f}")
+
+
+#sys.exit()
+
+
+
+def legs_move_xyz(legs, x, y, z, wait_end=False, wait_each=False):
+    reset_ave_servo_pos()
+    theta0, theta1, theta2 = inverse_kinematics(x, y, z, L1, L2)
+    legs_move_angles(legs, theta0, theta1, theta2, wait_end, wait_each)
+
+
+
+def legs_move_angles(legs, theta0, theta1, theta2, wait_end=False, wait_each=False):
+    reset_ave_servo_pos()
+    for leg in legs:
+        #theta0, theta1, theta2 = inverse_kinematics(x, y, z, L1, L2)
+        #servo_num = leg*3+joint
+        move_joint_angle(leg, 0, theta2, False)  # note thetaX and joint are opposite.  Just because.
+        move_joint_angle(leg, 1, theta1, False)
+        move_joint_angle(leg, 2, theta0, False)
+        if wait_each: wait_while_moving()
+    if wait_end: wait_while_moving()
+
+
+
+############################################################################
+
+
+
+
+
+        
+# #Test positions
+# reset_all_joints()
+# wait_while_moving()
+# move_leg_fwd(0, 50)
+# wait_while_moving()
+# move_joint_rel(0,0,90,wait=False)
+# move_joint_rel(5,0,-10)
+
 L1, L2 = 89, 122  # mm
-x, y = 127, 140 # mm
-theta1p, theta2p = inverse_kinematics(x, y, L1, L2)
-print(f"Theta1p: {theta1p:.2f} degrees, Theta2p: {theta2p:.2f} degrees")
 
-step_size = -20
-theta1, theta2 = inverse_kinematics(x+step_size, y, L1, L2)
-print(f"Theta1: {theta1:.2f} degrees, Theta2: {theta2:.2f} degrees")
+theta0, theta1, theta2 = 0, 0, 0
+print(theta0, theta1, theta2)
+x0, y0, z0 = forward_kinematics(theta0, theta1, theta2, L1, L2)
+print(f"Forward Kinematics Result: x = {x0:.2f}, y = {y0:.2f}, z = {z0:.2f}")
 
-delta_theta1 = theta1 - theta1p
-delta_theta2 = theta2 - theta2p
-print("delta_theta:", delta_theta1, delta_theta2)
+# theta0, theta1, theta2 = 0, 0, -90
+# x0, y0, z0 = forward_kinematics(theta0, theta1, theta2, L1, L2)
+# print(f"Forward Kinematics Result: x = {x0:.2f}, y = {y0:.2f}, z = {z0:.2f}")
+theta0, theta1, theta2 = inverse_kinematics(x0, y0, z0, L1, L2)
+print(f"Theta0: {theta0:.2f} degrees, Theta1: {theta1:.2f} degrees, Theta2: {theta2:.2f} degrees")
 
-scale_theta1 = 100 / 90 # steps / degrees
-scale_theta2 = 100 / 50 # steps / degrees
-
-delta_theta1_steps = int(round(scale_theta1 * delta_theta1,0))
-delta_theta2_steps = int(round(scale_theta2 * delta_theta2,0))
-
-print("delta_theta_steps", delta_theta1_steps, delta_theta2_steps)
+# print("\n")
+# x,y,z = 89, 0, 122
+# print("x,y,z", x,y,z)
+# theta0, theta1, theta2 = inverse_kinematics(x, y, z, L1, L2)
+# print(f"Theta0: {theta0:.2f} degrees, Theta1: {theta1:.2f} degrees, Theta2: {theta2:.2f} degrees")
 
 
+reset_all_joints()
+wait_while_moving()
+#move_joint_angle(0,0,-50)
+#legs_move_angles((0,), 45, 0, 30, True)
 
-# Walk
-
-
-# Test angles
-legs0 = (2,3)
-legs1 = (1,4)
-legs2 = (0,5)
-#legs2 = (2,3)   # 75, (2,3) almost falls over; 50, (2,3) is ok
-#legs_step_fwd((0,3,1,4,2,5), 50)  # 25 falls over; 50 is ok. 75 is ok; 100 is ok
-
-#legs_step_fwd(legs1+legs2, 50)
-#time.sleep(1.0)
-for count in range(5):
-
-    legs_step_fwd(legs1, 100)
-    time.sleep(1.0)
-    legs_step_fwd(legs0, 25)
-    time.sleep(1.0)
-    legs_step_fwd(legs2, 10)
-    time.sleep(1.0)
-
-    legs_up(legs1)
-    time.sleep(1.0)
-
-    #legs_set_position(legs0, 0, 50, 50)
-    legs_set_position(legs0, 25, 50-delta_theta1_steps, 50-delta_theta2_steps)
-    legs_set_position(legs2, 25)
-    time.sleep(1.0)
-
-    legs_down(legs1)
-
-    time.sleep(2.0)
+x,y,z = 63, 63, -50
+# theta0, theta1, theta2 = inverse_kinematics(x, y, z, L1, L2)
+# print(f"Theta0: {theta0:.2f} degrees, Theta1: {theta1:.2f} degrees, Theta2: {theta2:.2f} degrees")
+legs_move_xyz((0,), x, y, z, False)
 
 
-#servo.setSpeed(1,10)     #set speed of servo 1
-x = servo.getPosition(0) #get the current position of servo 1
-print(x)
-print(servo.isMoving(0))
+
+# Cleanup
+
 servo.close()
