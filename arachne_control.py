@@ -38,6 +38,8 @@ m_limits = (
     )
 
 
+L1, L2 = 89, 122  # mm
+
 ############# Other Definitions ################
 
 ACCEL = 15   # Global acceleration setting for all servos
@@ -49,6 +51,8 @@ MOVING_THRESH = 25  # How far away is "close-enough" to be still-moving
 
 CURR_SERVO_POS = [0 for i in m_limits]
 AVE_SERVO_POS = [servo_setting[3]*MLS for servo_setting in m_limits]  # Start at nominal for each
+
+SERVO_SCALE = 476.25*MLS/90.0   # steps / degrees
 
 
 # Global servo control
@@ -142,7 +146,7 @@ def move_joint(leg=0, joint=0, amount=50, wait=True):  # Amount goes 0 to 100
     if wait: wait_while_moving()
 
 
-SERVO_SCALE = 476.25*MLS/90.0   # steps / degrees
+
 
 def move_joint_angle(leg=0, joint=0, angle=0, wait=False): 
     reset_ave_servo_pos()
@@ -233,13 +237,6 @@ def legs_move_fwd(legs, amount=0):
 
 ########### Calculate Angles / Positions of legs #################
 
-import numpy as np
-
-
-
-
-# FIXME: z-axis should be facing *away* from the top of Arachne (so 0 degrees is straight down)
-
 def inverse_kinematics(x, y, z, L1, L2):
     """
     Computes theta0, theta1, and theta2 given foot position (x, y, z) and link lengths (L1, L2).
@@ -288,8 +285,7 @@ def forward_kinematics(theta0, theta1, theta2, L1, L2):
     
     return x, y, z
 
-# Example usage
-L1, L2 = 89, 122
+
 # theta0, theta1, theta2 = 45, 0, -90
 # print(theta0, theta1, theta2)
 # x, y, z = forward_kinematics(theta0, theta1, theta2, L1, L2)
@@ -338,18 +334,18 @@ def legs_move_angles(legs, theta0, theta1, theta2, wait_end=False, wait_each=Fal
 # move_joint_rel(0,0,90,wait=False)
 # move_joint_rel(5,0,-10)
 
-L1, L2 = 89, 122  # mm
 
-theta0, theta1, theta2 = 0, 0, 0
-print(theta0, theta1, theta2)
-x0, y0, z0 = forward_kinematics(theta0, theta1, theta2, L1, L2)
-print(f"Forward Kinematics Result: x = {x0:.2f}, y = {y0:.2f}, z = {z0:.2f}")
 
-# theta0, theta1, theta2 = 0, 0, -90
+# theta0, theta1, theta2 = 0, 0, 0
+# print(theta0, theta1, theta2)
 # x0, y0, z0 = forward_kinematics(theta0, theta1, theta2, L1, L2)
 # print(f"Forward Kinematics Result: x = {x0:.2f}, y = {y0:.2f}, z = {z0:.2f}")
-theta0, theta1, theta2 = inverse_kinematics(x0, y0, z0, L1, L2)
-print(f"Theta0: {theta0:.2f} degrees, Theta1: {theta1:.2f} degrees, Theta2: {theta2:.2f} degrees")
+
+# # theta0, theta1, theta2 = 0, 0, -90
+# # x0, y0, z0 = forward_kinematics(theta0, theta1, theta2, L1, L2)
+# # print(f"Forward Kinematics Result: x = {x0:.2f}, y = {y0:.2f}, z = {z0:.2f}")
+# theta0, theta1, theta2 = inverse_kinematics(x0, y0, z0, L1, L2)
+# print(f"Theta0: {theta0:.2f} degrees, Theta1: {theta1:.2f} degrees, Theta2: {theta2:.2f} degrees")
 
 # print("\n")
 # x,y,z = 89, 0, 122
@@ -358,15 +354,15 @@ print(f"Theta0: {theta0:.2f} degrees, Theta1: {theta1:.2f} degrees, Theta2: {the
 # print(f"Theta0: {theta0:.2f} degrees, Theta1: {theta1:.2f} degrees, Theta2: {theta2:.2f} degrees")
 
 
-reset_all_joints()
-wait_while_moving()
+#reset_all_joints()
+#wait_while_moving()
 #move_joint_angle(0,0,-50)
-#legs_move_angles((0,), 45, 0, 30, True)
+#legs_move_angles((0,), 0, 0, 0, True)
 
-x,y,z = 63, 63, -50
+#x,y,z = 63, 63, 
 # theta0, theta1, theta2 = inverse_kinematics(x, y, z, L1, L2)
 # print(f"Theta0: {theta0:.2f} degrees, Theta1: {theta1:.2f} degrees, Theta2: {theta2:.2f} degrees")
-legs_move_xyz((0,), x, y, z, False)
+#legs_move_xyz((0,), x, y, z, False)
 
 
 
