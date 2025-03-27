@@ -327,7 +327,7 @@ def legs_move_angles(legs, theta0, theta1, theta2, wait_end=False, wait_each=Fal
 
         
 # #Test positions
-# reset_all_joints()
+#reset_all_joints()
 # wait_while_moving()
 # move_leg_fwd(0, 50)
 # wait_while_moving()
@@ -353,16 +353,24 @@ def legs_move_angles(legs, theta0, theta1, theta2, wait_end=False, wait_each=Fal
 # theta0, theta1, theta2 = inverse_kinematics(x, y, z, L1, L2)
 # print(f"Theta0: {theta0:.2f} degrees, Theta1: {theta1:.2f} degrees, Theta2: {theta2:.2f} degrees")
 
-
-#reset_all_joints()
-#wait_while_moving()
+print("Starting")
+reset_all_joints()
+wait_while_moving()
 #move_joint_angle(0,0,-50)
-#legs_move_angles((0,), 0, 0, 0, True)
+#legs_move_angles((0,), 80, 0, 0, True)
 
-#x,y,z = 63, 63, 
-# theta0, theta1, theta2 = inverse_kinematics(x, y, z, L1, L2)
-# print(f"Theta0: {theta0:.2f} degrees, Theta1: {theta1:.2f} degrees, Theta2: {theta2:.2f} degrees")
-#legs_move_xyz((0,), x, y, z, False)
+
+# for count in range(3):
+#     legs_move_xyz((0,), 60, 60, -130, False)
+#     legs_move_xyz((1,), 60, 0, -130, False)
+#     legs_move_xyz((2,), 60, -60, -130, False)
+#     wait_while_moving()
+
+#     legs_move_xyz((0,), 60, 0, -130, False)
+#     legs_move_xyz((1,), 60, -60, -130, False)
+#     legs_move_xyz((2,), 60, -120, -130, False)
+#     wait_while_moving()
+
 
 
 
