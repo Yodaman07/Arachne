@@ -47,7 +47,7 @@ SERVO_SPEED = 100
 POS_AVERAGE_COUNT = 3   # Number of position readings to average together
 m_limits_scale = 4   # multiply all of the above for what should actually be written to the Maestro (not sure why)
 MLS = m_limits_scale
-MOVING_THRESH = 25  # How far away is "close-enough" to be still-moving
+MOVING_THRESH = 50  # How far away is "close-enough" to be still-moving
 
 CURR_SERVO_POS = [0 for i in m_limits]
 AVE_SERVO_POS = [servo_setting[3]*MLS for servo_setting in m_limits]  # Start at nominal for each
@@ -368,9 +368,13 @@ def legs_step_relative(legs, delta_x, delta_y, delta_z, step_z=10, wait_end=Fals
         theta0 = angle_from_steps(3*leg+2,CURR_SERVO_POS[3*leg+2])
         x0, y0, z0 = forward_kinematics(theta0, theta1, theta2, L1, L2)
         x, y, z = x0 + delta_x, y0 + delta_y, z0 + delta_z
-        legs_move_xyz((leg,), x0, y0, z0+step_z, True)
-        legs_move_xyz((leg,), x, y, z0+step_z, True)
-        legs_move_xyz((leg,), x, y, z, True)
+        legs_move_xyz((leg,), x0, y0, z0+step_z, False)
+        time.sleep(0.1)
+        legs_move_xyz((leg,), x, y, z0+step_z, False)
+        time.sleep(0.1)
+        legs_move_xyz((leg,), x, y, z, False)
+        time.sleep(0.1)
+        #FIXME: wait function is really slow, but the sleeps are not scalable
         
     
 ############################################################################
@@ -411,12 +415,33 @@ def legs_step_relative(legs, delta_x, delta_y, delta_z, step_z=10, wait_end=Fals
 # FIXME: Leg 3, joint 2 doesn't seem to work.  WTF???
 
 print("Starting")
-reset_all_joints()
-wait_while_moving()
+#reset_all_joints()
+#wait_while_moving()
 
-legs_move_angles((0,), 60, 0, 0, False)
-legs_move_angles((2,), -60, 0, 0, True)
+#legs_move_angles((0,5,), 60, 0, 0, False)
+#legs_move_angles((2,3,), -60, 0, 0, True)
 
+# legs_move_relative((0,1,2,3,4,5), 0, 40, 0, True)
+# legs_move_relative((0,1,2,3,4,5), 0, -60, 0, True)
+# legs_move_relative((0,1,2,3,4,5), 0, 20, 0, True)
+
+for count in range(3):
+    legs_move_relative((0,1,2,3,4,5), 0, 0, -50, True)
+    time.sleep(0.5)
+    legs_move_relative((0,1,2,3,4,5), 0, 0, 100, True)
+    time.sleep(0.5)
+    legs_move_relative((0,1,2,3,4,5), 0, 0, -50, True)
+
+    time.sleep(0.5)
+    legs_move_relative((0,1,2,3,4,5), 0, 50, 0, True)
+    time.sleep(0.5)
+    legs_move_relative((0,1,2,3,4,5), 0, -100, 0, True)
+    time.sleep(0.5)
+    legs_move_relative((0,1,2,3,4,5), 0, 50, 0, True)
+    time.sleep(0.5)
+
+
+#legs_step_relative((0,), 0, 30, 0, 40)
 #for count in range(1):
 #    legs_move_relative((2,0,), 0, 50, 0, True)
 
