@@ -317,8 +317,62 @@ def legs_move_angles(legs, theta0, theta1, theta2, wait_end=False, wait_each=Fal
         if wait_each: wait_while_moving()
     if wait_end: wait_while_moving()
 
+def angle_from_steps(servo_num, target):
+    joint_dir = m_limits[servo_num][2]
+    joint_nom = int(m_limits[servo_num][3]*MLS)   # this corresponds to zero degrees
+
+    #target = int(joint_nom + joint_dir*angle*SERVO_SCALE)
+    angle = (target - joint_nom)/(joint_dir*SERVO_SCALE)
+    return angle
+
+def steps_from_angle(servo_num, angle):
+    joint_dir = m_limits[servo_num][2]
+    joint_nom = int(m_limits[servo_num][3]*MLS)   # this corresponds to zero degrees
+
+    target = int(joint_nom + joint_dir*angle*SERVO_SCALE)
+    #angle = (target - joint_nom)/(joint_dir*SERVO_SCALE)
+    return target
 
 
+def legs_move_relative(legs, delta_x, delta_y, delta_z, wait_end=False):
+    reset_ave_servo_pos()
+    get_all_joints_pos()
+    new_position = CURR_SERVO_POS.copy()  #FIXME: Do all movements at once
+    for leg in legs:
+        theta2 = angle_from_steps(3*leg+0,CURR_SERVO_POS[3*leg+0])
+        theta1 = angle_from_steps(3*leg+1,CURR_SERVO_POS[3*leg+1])
+        theta0 = angle_from_steps(3*leg+2,CURR_SERVO_POS[3*leg+2])
+        x0, y0, z0 = forward_kinematics(theta0, theta1, theta2, L1, L2)
+        # print("step0,1,2", CURR_SERVO_POS[3*leg+0], CURR_SERVO_POS[3*leg+1], CURR_SERVO_POS[3*leg+2])
+       #  print("x,y,z", x0, y0, z0)
+        
+        # Check
+        # theta0_p, theta1_p, theta2_p = inverse_kinematics(x0,y0,z0,L1,L2)
+        # print("theta0,1,2", theta0_p, theta1_p, theta2_p)
+        # step0 = steps_from_angle(3*leg+0, theta2_p)
+        # step1 = steps_from_angle(3*leg+1, theta1_p)
+        # step2 = steps_from_angle(3*leg+2, theta0_p)
+        # print("steps, ", step0, step1, step2)
+        x, y, z = x0 + delta_x, y0 + delta_y, z0 + delta_z
+        legs_move_xyz((leg,), x, y, z, False)
+    if wait_end: wait_while_moving()
+
+
+def legs_step_relative(legs, delta_x, delta_y, delta_z, step_z=10, wait_end=False):
+    reset_ave_servo_pos()
+    get_all_joints_pos()
+    new_position = CURR_SERVO_POS.copy()  #FIXME: Do all movements at once
+    for leg in legs:
+        theta2 = angle_from_steps(3*leg+0,CURR_SERVO_POS[3*leg+0])
+        theta1 = angle_from_steps(3*leg+1,CURR_SERVO_POS[3*leg+1])
+        theta0 = angle_from_steps(3*leg+2,CURR_SERVO_POS[3*leg+2])
+        x0, y0, z0 = forward_kinematics(theta0, theta1, theta2, L1, L2)
+        x, y, z = x0 + delta_x, y0 + delta_y, z0 + delta_z
+        legs_move_xyz((leg,), x0, y0, z0+step_z, True)
+        legs_move_xyz((leg,), x, y, z0+step_z, True)
+        legs_move_xyz((leg,), x, y, z, True)
+        
+    
 ############################################################################
 
 
@@ -353,11 +407,27 @@ def legs_move_angles(legs, theta0, theta1, theta2, wait_end=False, wait_each=Fal
 # theta0, theta1, theta2 = inverse_kinematics(x, y, z, L1, L2)
 # print(f"Theta0: {theta0:.2f} degrees, Theta1: {theta1:.2f} degrees, Theta2: {theta2:.2f} degrees")
 
+
+# FIXME: Leg 3, joint 2 doesn't seem to work.  WTF???
+
 print("Starting")
 reset_all_joints()
 wait_while_moving()
-#move_joint_angle(0,0,-50)
-#legs_move_angles((0,), 80, 0, 0, True)
+
+legs_move_angles((0,), 60, 0, 0, False)
+legs_move_angles((2,), -60, 0, 0, True)
+
+#for count in range(1):
+#    legs_move_relative((2,0,), 0, 50, 0, True)
+
+
+
+#move_joint_angle(5,2, 45)
+#move_joint_angle(4,2,-30)
+#move_joint_angle(3,1,30)
+
+#legs_move_angles((0,), 90, 0, 0, True)
+#legs_move_angles((2,), -90, 0, 0, True)
 
 
 # for count in range(3):
