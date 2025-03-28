@@ -26,7 +26,7 @@ m_limits = (
     
     (944, 1632, -1, 1468.25),  #  9
     (720, 1264, 1, 1195.25),   # 10
-    (848, 1200, 1, 1871.75),   # 11
+    (848, 1200, 1, 2488.25),   # 11
     
     (944, 1376, -1, 1405.25),
     (752, 1200, 1, 1214.25),
@@ -317,6 +317,21 @@ def legs_move_angles(legs, theta0, theta1, theta2, wait_end=False, wait_each=Fal
         if wait_each: wait_while_moving()
     if wait_end: wait_while_moving()
 
+def legs_step_angles(legs, theta0, theta1, theta2, step_angle=15, wait_end=False, wait_each=False):
+    reset_ave_servo_pos()
+    for leg in legs:
+        #theta0, theta1, theta2 = inverse_kinematics(x, y, z, L1, L2)
+        #servo_num = leg*3+joint
+        move_joint_angle(leg, 1, step_angle)
+        time.sleep(0.1)
+        move_joint_angle(leg, 2, theta0, False)
+        move_joint_angle(leg, 0, theta2, False)  # note thetaX and joint are opposite.  Just because.
+        time.sleep(0.1)
+        move_joint_angle(leg, 1, theta1, False)
+        time.sleep(0.1)
+    if wait_end: wait_while_moving()
+
+
 def angle_from_steps(servo_num, target):
     joint_dir = m_limits[servo_num][2]
     joint_nom = int(m_limits[servo_num][3]*MLS)   # this corresponds to zero degrees
@@ -415,33 +430,43 @@ def legs_step_relative(legs, delta_x, delta_y, delta_z, step_z=10, wait_end=Fals
 # FIXME: Leg 3, joint 2 doesn't seem to work.  WTF???
 
 print("Starting")
-#reset_all_joints()
-#wait_while_moving()
+reset_all_joints()
+wait_while_moving()
+time.sleep(3)
+
+# FIXME: There is some error in relative motion on legs 2 and 3 such that
+# the go up as you do more relative moves
 
 #legs_move_angles((0,5,), 60, 0, 0, False)
 #legs_move_angles((2,3,), -60, 0, 0, True)
 
-# legs_move_relative((0,1,2,3,4,5), 0, 40, 0, True)
-# legs_move_relative((0,1,2,3,4,5), 0, -60, 0, True)
-# legs_move_relative((0,1,2,3,4,5), 0, 20, 0, True)
 
-for count in range(3):
-    legs_move_relative((0,1,2,3,4,5), 0, 0, -50, True)
-    time.sleep(0.5)
-    legs_move_relative((0,1,2,3,4,5), 0, 0, 100, True)
-    time.sleep(0.5)
-    legs_move_relative((0,1,2,3,4,5), 0, 0, -50, True)
+# for count in range(2):
+#     legs_move_relative((0,1,2,3,4,5), 0, 0, -50, True)
+#     time.sleep(0.5)
+#     legs_move_relative((0,1,2,3,4,5), 0, 0, 100, True)
+#     time.sleep(0.5)
+#     legs_move_relative((0,1,2,3,4,5), 0, 0, -50, True)
 
-    time.sleep(0.5)
-    legs_move_relative((0,1,2,3,4,5), 0, 50, 0, True)
-    time.sleep(0.5)
-    legs_move_relative((0,1,2,3,4,5), 0, -100, 0, True)
-    time.sleep(0.5)
-    legs_move_relative((0,1,2,3,4,5), 0, 50, 0, True)
-    time.sleep(0.5)
+#     time.sleep(0.5)
+#     legs_move_relative((0,1,2,3,4,5), 0, 50, 0, True)
+#     time.sleep(0.5)
+#     legs_move_relative((0,1,2,3,4,5), 0, -100, 0, True)
+#     time.sleep(0.5)
+#     legs_move_relative((0,1,2,3,4,5), 0, 50, 0, True)
+#     time.sleep(0.5)
 
+for count in range(4):
 
-#legs_step_relative((0,), 0, 30, 0, 40)
+    legs_step_angles((0,5,), 60, 35, -15, 50)
+    legs_step_angles((1,4,), 0, 35, -15, 50)
+    legs_step_angles((2,3,), -60, 35, -15, 50)
+    wait_while_moving()
+
+    legs_move_relative((0,1,2,3,4,5), 0, -70, 0, True)
+    wait_while_moving()
+    
+
 #for count in range(1):
 #    legs_move_relative((2,0,), 0, 50, 0, True)
 
