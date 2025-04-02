@@ -1,10 +1,11 @@
 # Arachne Control and Walking
 
 # ToDo:
-# * Have all the relative_xyz movements wait till one be execute.  Right now, each leg is separate.
+# * Change walking to be muti-step: move fwd leg/legs; move body fwd; move other legs fwd; more body the rest of the way fwd
 # * Use a function like Maestro's IsMoving to compare desired setpoint to what was actually achieved.
 #   In this way, you can check for objects in the way/ changes in floor, and maybe self-calibration
 #   Check range of x,y,z that each leg can achieve, store in a table?
+# * Have all the relative_xyz movements wait till one be execute.  Right now, each leg is separate.
 # * Store each joint angle as it is written so that the inverse-functions for relative movement are more exact
 # * Add a calibration point (or maybe 2) to make moving more accurate
 # * #FIXME: There is some error in relative motion on legs 2 and 3 such that
