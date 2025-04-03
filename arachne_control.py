@@ -81,6 +81,20 @@ NEXT_SERVO_POS = [0 for i in m_limits]
 #SERVO_SCALE = 476.25*MLS/90.0   # steps / degrees
 
 
+
+# Define legs for different directions
+legs_directions = {
+      0: [(5,0), (4,1), (3,2), 0, 1],
+     45: [(0,1), (5,2), (4,3), 0.7, 0.7],
+     90: [(0,1,2), (), (3,4,5), 1, 0],
+    135: [(1,2), (3,0), (4,5), 0.7, -0.7],
+    180: [(2,3), (4,1), (5,0), 0, -1],
+}
+
+
+
+
+
 # Global servo control
 servo = maestro_extended.ExtendedController(device=12, stall_timeout=0.5, check_interval=0.05)
 
@@ -389,6 +403,8 @@ def legs_move_relative(legs, delta_x, delta_y, delta_z, wait_end=False):
 
 
 def legs_step_relative(legs, delta_x, delta_y, delta_z, step_z=75, wait_end=False):
+    print("step relative: legs: ", legs)
+    if legs == (): return
     delay = 0.3
     reset_ave_servo_pos()
     get_all_joints_pos()
@@ -433,9 +449,9 @@ print("Starting")
 all_legs = (0,1,2,4,5)
 all_legs = (2,3,4,5,1,0
             )
-front_legs = (5,0)
-mid_legs = (4,1)
-back_legs = (3,2)
+actual_front_legs = (5,0)
+actual_mid_legs = (4,1)
+actual_back_legs = (3,2)
 
 #move_joint_angle(3, 2, -90)
 #servo.setTarget(11, 7400)  #4800, 9408
@@ -468,43 +484,58 @@ back_legs = (3,2)
 
 
 delay = 0.3
-step_size = 25
+step_size = 30
 
-for count in range(2):
+direction = 0
+#FIXME: 90 degree direction, weird double move
+
+
+
+front_legs, mid_legs, back_legs, delta_x, delta_y = legs_directions[direction]
+print("front, mid, back, dx, dy: ", front_legs, mid_legs, back_legs, delta_x, delta_y)
+#sys.exit()
+
+for count in range(3):
 
     print("*** 1 ***")
-    legs_step_angles(front_legs, 45, 10, -15)
-    legs_step_angles(mid_legs,   10, 10, -15, wait_each=False)
-    legs_step_angles(back_legs, -45, 10, -15)
+    legs_step_angles(actual_front_legs, 45, 10, -15)
+    legs_step_angles(actual_mid_legs,   10, 10, -15, wait_each=False)
+    legs_step_angles(actual_back_legs, -45, 10, -15)
     #wait_while_legs_moving(all_legs)
     time.sleep(delay)
 
     #input("Press Enter to continue...")
     print("*** 2 ***")
     #legs_step_angles(front_legs, 65, 10, -5)
-    legs_step_relative(front_legs, 0, 2*step_size, 0)
+    legs_step_relative(front_legs, delta_x*step_size, 2*delta_y*step_size, 0)
     time.sleep(delay)
     #wait_while_legs_moving(all_legs)
     
     #input("Press Enter to continue...")
     print("*** 3 ***")
-    legs_move_relative(all_legs, 0, -step_size, 0)
+    legs_move_relative(all_legs, delta_x*step_size, -delta_y*step_size, 0)
     time.sleep(delay)
     #wait_while_legs_moving(all_legs)
     
     #input("Press Enter to continue...")
     print("*** 4 ***")
-    legs_step_relative(mid_legs, 0, step_size, 0)
+    legs_step_relative(mid_legs, delta_x*step_size, delta_y*step_size, 0)
     time.sleep(delay)
     #wait_while_legs_moving(all_legs)
     
     #input("Press Enter to continue...")
     print("*** 5 ***")
-    legs_move_relative(all_legs, 0, -step_size, 0)
+    legs_move_relative(all_legs, delta_x*step_size, -delta_y*step_size, 0)
     time.sleep(delay)
     # #wait_while_legs_moving(all_legs)
     
     
+legs_step_angles(actual_front_legs, 45, 10, -15)
+legs_step_angles(actual_mid_legs,   10, 10, -15, wait_each=False)
+legs_step_angles(actual_back_legs, -45, 10, -15)
+#wait_while_legs_moving(all_legs)
+time.sleep(delay)
+
 
 # Cleanup
 
