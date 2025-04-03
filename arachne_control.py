@@ -1,17 +1,18 @@
 # Arachne Control and Walking
 
 # ToDo:
-# * wait while moving is ot working.  separate thread?
-# * Change walking to be muti-step: move fwd leg/legs; move body fwd; move other legs fwd; more body the rest of the way fwd
-# * Use a function like Maestro's IsMoving to compare desired setpoint to what was actually achieved.
+# * if leg is already in the right spot, don't step
+# * Change walking to be multi-step: move fwd leg/legs; move body fwd; move other legs fwd; more body the rest of the way fwd
+# X Use a function like Maestro's IsMoving to compare desired setpoint to what was actually achieved.
 #   In this way, you can check for objects in the way/ changes in floor, and maybe self-calibration
-#   Check range of x,y,z that each leg can achieve, store in a table?
-# * Have all the relative_xyz movements wait till one be execute.  Right now, each leg is separate.
+#   Check range of x,y,z (self-calibrate) so that each leg can achieve, store in a table?
+# X Have all the relative_xyz movements wait till one big execute.  Right now, each leg is separate.
 # * Store each joint angle as it is written so that the inverse-functions for relative movement are more exact
-# * Add a calibration point (or maybe 2) to make moving more accurate
-# * #FIXME: There is some error in relative motion on legs 2 and 3 such that
+# X Add a calibration point (or maybe 2) to make moving more accurate
+# X There is some error in relative motion on legs 2 and 3 such that
 #   they go up as you do more relative moves.  Or was it just a delay problem?
-# * #FIXME: wait function is really slow, but the sleeps are not scalable
+# X wait function is really slow, but the sleeps are not scalable
+# X wait while moving is ot working.  separate thread?
 
 
 
@@ -21,7 +22,7 @@ import time
 import numpy as np
 import sys
 
-DEBUG = True
+debug = False
 
 
 # Define Motor limits and characteristics
@@ -48,7 +49,7 @@ m_limits = [
     
     [704, 1904, -1, 1468.25, 90, 832.0, 999],  #  9
     [496, 1600, 1, 1195.25, -45, 929.25, 999],   # 10
-    [1424, 2608, 1, 2488.25,-45, 1993.0, 999 ],   # 11
+    [1200, 2352, 1, 2305.00, -90, 1390.0, 999 ],   # 11
     
     [608, 1904, -1, 1435.25, 90, 784.0, 999],
     [752, 1600, 1, 1214.25, -45, 891.75, 999],
@@ -62,44 +63,11 @@ m_limits = [
 
 L1, L2 = 85, 123  # mm  #FIXME: Measure better
 
-m_limits_old = [
-    
-    # Right Side
-
-    # FIXME: Not using min/max right now.  Do I need to?
-    
-    [992, 1552, 1, 1122.25, 45, 1391.25, 999],  # min, max, direction, nominal [0 degrees], setting [calibrated], calibrated angle. slope [calc'd later]
-    [1136, 1744, -1, 1277.5, -45, 1512.50, 999],
-    [1328, 1888, -1, 1815.25, 45, 1458.25, 999],
-    
-    [496, 928, -1, 848.25, 45, 646.25, 999],
-    [1232, 1872, -1, 1405.75, -45, 1643.0, 999],
-    [1568, 1936, 1, 1901.25, 45, 2189.5, 999 ],
-
-    [1056, 1856, 1, 1250.0, 45, 1529.75, 999],
-    [1312, 1920, -1, 1441.75, -45, 1668.0, 999],
-    [1488, 2048, -1, 1119.0, -45, 1618.75, 999],
-    
-    # Left Side
-    
-    [944, 1632, -1, 1468.25, 45, 1286.50, 999],  #  9
-    [720, 1264, 1, 1195.25, -45, 769.25, 999],   # 10
-    [848, 1200, 1, 2488.25,-45, 1993.0, 999 ],   # 11
-    
-    [944, 1376, -1, 1405.25, 45, 1193.0, 999],
-    [752, 1200, 1, 1214.25, -45, 891.75, 999],
-    [1008, 1488, 1, 1556.75, 45, 1937.25, 999],
-    
-    [880, 1600, -1, 1537.0, 45, 1211.75, 999],
-    [704, 1104, 1, 1147.0, -45, 799.25, 999],
-    [688, 1248, 1, 780.75, 45, 1139.5, 999],
-    ]
-
 
 
 ############# Other Definitions ################
 
-ACCEL = 20   # Global acceleration setting for all servos
+ACCEL = 30   # Global acceleration setting for all servos
 SERVO_SPEED = 200
 POS_AVERAGE_COUNT = 3   # Number of position readings to average together
 m_limits_scale = 4   # multiply all of the above for what should actually be written to the Maestro (not sure why)
@@ -114,11 +82,11 @@ NEXT_SERVO_POS = [0 for i in m_limits]
 
 
 # Global servo control
-servo = maestro_extended.ExtendedController(device=12, stall_timeout=0.5, check_interval=0.01)
+servo = maestro_extended.ExtendedController(device=12, stall_timeout=0.5, check_interval=0.05)
 
 # Set software limits to be the same as the hardware limits, calculate slopes
 for i in range(len(m_limits)):
-    servo.setRange(i, (m_limits[i][0]+1)*MLS, (m_limits[0][1]-1)*MLS)
+    servo.setRange(i, (m_limits[i][0])*MLS, (m_limits[i][1])*MLS)
     
     servo.setAccel(i, ACCEL)
     servo.setSpeed(i, SERVO_SPEED)
@@ -213,7 +181,13 @@ def wait_while_legs_moving(legs):
         servo_list.append(3*leg+1)
         servo_list.append(3*leg+2)
     return servo.wait_while_moving(servo_list)      
-        
+    #return wait_while_any_moving()    
+
+def wait_while_any_moving(): # Doesn't work
+    while servo.getMovingState():
+        pass
+    return None
+
 
 def move_joint_rel(leg=0, joint=0, degrees=10, wait=True):
     reset_ave_servo_pos()
@@ -256,7 +230,8 @@ def move_joint_angle(leg=0, joint=0, angle=0, wait=False, wait_till_execute = Fa
     
     target = int(joint_nom + angle*angle_scale) #joint_dir*angle*SERVO_SCALE)
 
-    print("leg, joint, angle, joint_dir, joint_nom, target:", leg, joint, angle, joint_dir, joint_nom, target)
+    if debug: print("leg, joint, angle, joint_dir, joint_nom, target:", leg, joint, angle, joint_dir, joint_nom, target)
+    if debug: print("   limits: ", m_limits[servo_num][0]*MLS, m_limits[servo_num][1]*MLS)
     if not wait_till_execute:
         servo.setTarget(servo_num, target)
     else:
@@ -265,7 +240,7 @@ def move_joint_angle(leg=0, joint=0, angle=0, wait=False, wait_till_execute = Fa
 
 
 def execute_move_joint_angle(wait = False):
-    print("Executing")
+    if debug: print("Executing")
     reset_ave_servo_pos()
     for servo_num in range(len(m_limits)):
         #joint_nom = int(m_limits[servo_num][3]*MLS)
@@ -413,7 +388,8 @@ def legs_move_relative(legs, delta_x, delta_y, delta_z, wait_end=False):
     if wait_end: wait_while_moving()
 
 
-def legs_step_relative(legs, delta_x, delta_y, delta_z, step_z=50, wait_end=False):
+def legs_step_relative(legs, delta_x, delta_y, delta_z, step_z=75, wait_end=False):
+    delay = 0.3
     reset_ave_servo_pos()
     get_all_joints_pos()
     new_position = CURR_SERVO_POS.copy()  #FIXME: Do all movements at once
@@ -423,12 +399,15 @@ def legs_step_relative(legs, delta_x, delta_y, delta_z, step_z=50, wait_end=Fals
         theta0 = angle_from_steps(3*leg+2,CURR_SERVO_POS[3*leg+2])
         x0, y0, z0 = forward_kinematics(theta0, theta1, theta2, L1, L2)
         x, y, z = x0 + delta_x, y0 + delta_y, z0 + delta_z
-        legs_move_xyz((leg,), x0, y0, z0+step_z, True)
-        #time.sleep(0.1)
-        legs_move_xyz((leg,), x, y, z0+step_z, True)
-        #time.sleep(0.1)
-        legs_move_xyz((leg,), x, y, z, True)
-        #time.sleep(0.1)
+        legs_move_xyz((leg,), x0, y0, z0+step_z, False)
+        #wait_while_legs_moving((leg,))
+        time.sleep(delay)
+        legs_move_xyz((leg,), x, y, z0+step_z, False)
+        #wait_while_legs_moving((leg,))
+        time.sleep(delay)
+        legs_move_xyz((leg,), x, y, z, False)
+        #wait_while_legs_moving((leg,))
+        time.sleep(delay)
         
 
     
@@ -440,7 +419,7 @@ def legs_step_relative(legs, delta_x, delta_y, delta_z, step_z=50, wait_end=Fals
 print("Starting")
 
 # Get to default walking position
-# reset_all_joints()
+#reset_all_joints()
 # print(wait_while_legs_moving((0,1,2,3,4,5)))
 # # wait_while_moving()
 # #time.sleep(1)
@@ -451,27 +430,81 @@ print("Starting")
 # print ("Ret:", ret)
 
 
-all_legs = (0,1,2,3,4,5)
+all_legs = (0,1,2,4,5)
+all_legs = (2,3,4,5,1,0
+            )
+front_legs = (5,0)
+mid_legs = (4,1)
+back_legs = (3,2)
 
-legs_step_angles((3,), 30, 40, 0)
+#move_joint_angle(3, 2, -90)
+#servo.setTarget(11, 7400)  #4800, 9408
 
-# Walking not too bad
-for count in range(3):
+# legs_step_angles(back_legs, -45 , 10, -25)
+# time.sleep(1)
+# legs_move_relative(back_legs, 0, -80, 0)
+# sys.exit()
 
-    legs_step_angles((5,0,), 55, 10, -5)
-    legs_step_angles((4,1), 25, 10, -25, wait_each=False)
-    #legs_step_angles((3,2,), -15, 10, -25)
-    legs_step_angles((2,), -40, 10, -25)
+
+#legs_step_angles((3,), 30, 40, 0)
+
+# # Walking not too bad
+# for count in range(3):
+
+#     legs_step_angles((5,0,), 55, 10, -5)
+#     legs_step_angles((4,1), 25, 10, -25, wait_each=False)
+#     #legs_step_angles((3,2,), -15, 10, -25)
+#     legs_step_angles((2,), -40, 10, -25)
     
-    wait_while_legs_moving(all_legs)
-    #time.sleep(1)
+#     wait_while_legs_moving(all_legs)
+#     #time.sleep(1)
 
-    legs_move_relative((0,1,2,4,5), 0, -60, 0, False)  # was 0, -70, 0
-    wait_while_legs_moving(all_legs)
-    time.sleep(0.5)
+#     legs_move_relative((0,1,2,4,5), 0, -60, 0, False)  # was 0, -70, 0
+#     wait_while_legs_moving(all_legs)
+#     time.sleep(0.5)
     
 
+#legs_move_angles(back_legs, -45 , 10, -25)
 
+
+delay = 0.3
+step_size = 25
+
+for count in range(2):
+
+    print("*** 1 ***")
+    legs_step_angles(front_legs, 45, 10, -15)
+    legs_step_angles(mid_legs,   10, 10, -15, wait_each=False)
+    legs_step_angles(back_legs, -45, 10, -15)
+    #wait_while_legs_moving(all_legs)
+    time.sleep(delay)
+
+    #input("Press Enter to continue...")
+    print("*** 2 ***")
+    #legs_step_angles(front_legs, 65, 10, -5)
+    legs_step_relative(front_legs, 0, 2*step_size, 0)
+    time.sleep(delay)
+    #wait_while_legs_moving(all_legs)
+    
+    #input("Press Enter to continue...")
+    print("*** 3 ***")
+    legs_move_relative(all_legs, 0, -step_size, 0)
+    time.sleep(delay)
+    #wait_while_legs_moving(all_legs)
+    
+    #input("Press Enter to continue...")
+    print("*** 4 ***")
+    legs_step_relative(mid_legs, 0, step_size, 0)
+    time.sleep(delay)
+    #wait_while_legs_moving(all_legs)
+    
+    #input("Press Enter to continue...")
+    print("*** 5 ***")
+    legs_move_relative(all_legs, 0, -step_size, 0)
+    time.sleep(delay)
+    # #wait_while_legs_moving(all_legs)
+    
+    
 
 # Cleanup
 

@@ -57,12 +57,35 @@ class ExtendedController(maestro.Controller):
         :param channels: List of servo channels to check.
         :return: 'Stalled' if any servo is stalled, otherwise None.
         """
+        check_counter = 50
         if isinstance(channels, int):  # Allow single channel input
             channels = [channels]
 
         while any(self.isMoving(ch) for ch in channels):
             for ch in channels:
                 if self.isStalled(ch):
+                    return "Stalled"
+            time.sleep(self.check_interval)
+        
+        return None  # All servos reached their targets
+
+
+    def wait_while_moving_notworking(self, channels):
+        """
+        Waits while the specified servos are moving. Returns 'Stalled' if any servo is stuck.
+        :param channels: List of servo channels to check.
+        :return: 'Stalled' if any servo is stalled, otherwise None.
+        """
+        check_counter = 10
+
+        if isinstance(channels, int):  # Allow single channel input
+            channels = [channels]
+
+        while any(self.isMoving(ch) for ch in channels):
+            check_counter -= 1
+            for ch in channels:
+                if self.isStalled(ch) or check_counter < 0:
+                    print("***STALLED***")
                     return "Stalled"
             time.sleep(self.check_interval)
         
