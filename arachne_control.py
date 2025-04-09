@@ -1,6 +1,8 @@
 # Arachne Control and Walking
 
 # ToDo:
+# * Make leg x consistent for both left side and right side
+#   <-- FIXME: for some directions, the leg x orientation needs to change (+x out is not always good).  Maybe x direction should always be consistent?
 # * if leg is already in the right spot, don't step
 # * Change walking to be multi-step: move fwd leg/legs; move body fwd; move other legs fwd; more body the rest of the way fwd
 # X Use a function like Maestro's IsMoving to compare desired setpoint to what was actually achieved.
@@ -67,7 +69,7 @@ L1, L2 = 85, 123  # mm  #FIXME: Measure better
 
 ############# Other Definitions ################
 
-ACCEL = 30   # Global acceleration setting for all servos
+ACCEL = 15   # Global acceleration setting for all servos
 SERVO_SPEED = 200
 POS_AVERAGE_COUNT = 3   # Number of position readings to average together
 m_limits_scale = 4   # multiply all of the above for what should actually be written to the Maestro (not sure why)
@@ -84,9 +86,9 @@ NEXT_SERVO_POS = [0 for i in m_limits]
 
 # Define legs for different directions
 legs_directions = {
-      0: [(5,0), (4,1), (3,2), 0, 1],
+      0: [(5,0), (4,1), (3,2), 0, 1],  # (front legs), (mid legs), (back legs), (leg direction override), step x_scale, step y_scale]
      45: [(0,1), (5,2), (4,3), 0.7, 0.7],
-     90: [(0,1,2), (), (3,4,5), 1, 0],
+     90: [(1,), (0,2), (3,4,5), 1, 0],
     135: [(1,2), (3,0), (4,5), 0.7, -0.7],
     180: [(2,3), (4,1), (5,0), 0, -1],
 }
@@ -137,6 +139,16 @@ def get_all_joints_pos(ave_count = POS_AVERAGE_COUNT, sleep_time = 0.05):
         #print("curr_pos", curr_pos)
         CURR_SERVO_POS[servo_num] = curr_pos
         #AVE_SERVO_POS[servo_num] = ave_pos
+
+rel_zero_pos = 18*[0]
+
+def set_rel_zero_position():
+    global pos_rel_zero
+    for servo_num in range(len(m_limits)):
+        curr_pos = servo.getPosition(servo_num)
+        rel_zero_pos[servo_num] = curr_pos
+        
+
 
 def update_ave_joints_pos(ave_count = POS_AVERAGE_COUNT):
     global CURR_SERVO_POS, AVE_SERVO_POS
@@ -265,6 +277,7 @@ def execute_move_joint_angle(wait = False):
     if wait: wait_while_moving()
         
 
+
 ########### Calculate Angles / Positions of legs #################
 
 def inverse_kinematics(x, y, z, L1, L2):
@@ -361,17 +374,20 @@ def legs_move_angles(legs, theta0, theta1, theta2, wait_end=False):
     if wait_end: wait_while_moving()
 
 
-def legs_step_angles(legs, theta0, theta1, theta2, step_angle=30, wait_end=False, wait_each=True):
+def legs_step_angles(legs, theta0, theta1, theta2, step_angle=30, wait_end=False, wait_each=True, delay = 0.3):
     reset_ave_servo_pos()
     if wait_each:
         for leg in legs:
             move_joint_angle(leg, 1, theta1+step_angle)
-            wait_while_legs_moving((leg,))
+            #wait_while_legs_moving((leg,))
+            time.sleep(delay)
             move_joint_angle(leg, 2, theta0, False)
             move_joint_angle(leg, 0, theta2, False)  # note thetaX and joint are opposite.  Just because.
-            wait_while_legs_moving((leg,))
+            time.sleep(delay)
+            #wait_while_legs_moving((leg,))
             move_joint_angle(leg, 1, theta1, False)
-            wait_while_legs_moving((leg,))
+            time.sleep(delay)
+            #wait_while_legs_moving((leg,))
     else:
         for leg in legs:
             move_joint_angle(leg, 1, theta1+step_angle)   
@@ -388,41 +404,50 @@ def legs_step_angles(legs, theta0, theta1, theta2, step_angle=30, wait_end=False
     if wait_end: wait_while_legs_moving(legs)
 
 
-def legs_move_relative(legs, delta_x, delta_y, delta_z, wait_end=False):
+def legs_move_relative(legs, delta_x, delta_y, delta_z, rel_zero = False, wait_end=False):
+    global rel_zero_pos
     reset_ave_servo_pos()
     get_all_joints_pos()
-    new_position = CURR_SERVO_POS.copy()  #FIXME: Do all movements at once
-    for leg in legs:
-        theta2 = angle_from_steps(3*leg+0,CURR_SERVO_POS[3*leg+0])
-        theta1 = angle_from_steps(3*leg+1,CURR_SERVO_POS[3*leg+1])
-        theta0 = angle_from_steps(3*leg+2,CURR_SERVO_POS[3*leg+2])
+    if rel_zero:
+        curr_zero_pos = rel_zero_pos
+    else:
+        curr_zero_pos = CURR_SERVO_POS
+    for leg in legs:  # FIXME: Move all at once
+        theta2 = angle_from_steps(3*leg+0,curr_zero_pos[3*leg+0])
+        theta1 = angle_from_steps(3*leg+1,curr_zero_pos[3*leg+1])
+        theta0 = angle_from_steps(3*leg+2,curr_zero_pos[3*leg+2])
         x0, y0, z0 = forward_kinematics(theta0, theta1, theta2, L1, L2)
         x, y, z = x0 + delta_x, y0 + delta_y, z0 + delta_z
         legs_move_xyz((leg,), x, y, z, False)
     if wait_end: wait_while_moving()
 
 
-def legs_step_relative(legs, delta_x, delta_y, delta_z, step_z=75, wait_end=False):
+def legs_step_relative(legs, delta_x, delta_y, delta_z, step_z_angle=25, rel_zero = False, wait_end=False, delay=0.15):
+    global rel_zero_pos
+    left_side_legs = (3,4,5)
     print("step relative: legs: ", legs)
     if legs == (): return
-    delay = 0.3
+    #delay = 0.3
     reset_ave_servo_pos()
     get_all_joints_pos()
-    new_position = CURR_SERVO_POS.copy()  #FIXME: Do all movements at once
+    if rel_zero:
+        curr_zero_pos = rel_zero_pos
+    else:
+        curr_zero_pos = CURR_SERVO_POS
     for leg in legs:
-        theta2 = angle_from_steps(3*leg+0,CURR_SERVO_POS[3*leg+0])
-        theta1 = angle_from_steps(3*leg+1,CURR_SERVO_POS[3*leg+1])
-        theta0 = angle_from_steps(3*leg+2,CURR_SERVO_POS[3*leg+2])
+        theta2 = angle_from_steps(3*leg+0,curr_zero_pos[3*leg+0])
+        theta1 = angle_from_steps(3*leg+1,curr_zero_pos[3*leg+1])
+        theta0 = angle_from_steps(3*leg+2,curr_zero_pos[3*leg+2])
         x0, y0, z0 = forward_kinematics(theta0, theta1, theta2, L1, L2)
         x, y, z = x0 + delta_x, y0 + delta_y, z0 + delta_z
-        legs_move_xyz((leg,), x0, y0, z0+step_z, False)
-        #wait_while_legs_moving((leg,))
+        theta0_new, theta1_new, theta2_new = inverse_kinematics(x,y,z, L1, L2)
+        move_joint_angle(leg, 1, theta1+step_z_angle)
         time.sleep(delay)
-        legs_move_xyz((leg,), x, y, z0+step_z, False)
-        #wait_while_legs_moving((leg,))
+        move_joint_angle(leg, 2, theta0_new)
+        #time.sleep(delay)
+        move_joint_angle(leg, 0, theta2_new)
         time.sleep(delay)
-        legs_move_xyz((leg,), x, y, z, False)
-        #wait_while_legs_moving((leg,))
+        move_joint_angle(leg, 1, theta1_new)
         time.sleep(delay)
         
 
@@ -446,9 +471,7 @@ print("Starting")
 # print ("Ret:", ret)
 
 
-all_legs = (0,1,2,4,5)
-all_legs = (2,3,4,5,1,0
-            )
+all_legs = (2,3,4,5,1,0)
 actual_front_legs = (5,0)
 actual_mid_legs = (4,1)
 actual_back_legs = (3,2)
@@ -483,7 +506,7 @@ actual_back_legs = (3,2)
 #legs_move_angles(back_legs, -45 , 10, -25)
 
 
-delay = 0.3
+delay = 0.2
 step_size = 30
 
 direction = 0
@@ -493,48 +516,88 @@ direction = 0
 
 front_legs, mid_legs, back_legs, delta_x, delta_y = legs_directions[direction]
 print("front, mid, back, dx, dy: ", front_legs, mid_legs, back_legs, delta_x, delta_y)
-#sys.exit()
 
-for count in range(3):
 
-    print("*** 1 ***")
-    legs_step_angles(actual_front_legs, 45, 10, -15)
-    legs_step_angles(actual_mid_legs,   10, 10, -15, wait_each=False)
-    legs_step_angles(actual_back_legs, -45, 10, -15)
-    #wait_while_legs_moving(all_legs)
-    time.sleep(delay)
 
-    #input("Press Enter to continue...")
-    print("*** 2 ***")
-    #legs_step_angles(front_legs, 65, 10, -5)
-    legs_step_relative(front_legs, delta_x*step_size, 2*delta_y*step_size, 0)
-    time.sleep(delay)
-    #wait_while_legs_moving(all_legs)
+# for count in range(1):
+
+#     print("*** 1 ***")
+#     legs_step_angles(actual_front_legs, 45, 10, -15)
+#     legs_step_angles(actual_mid_legs,   10, 10, -15, wait_each=False)
+#     legs_step_angles(actual_back_legs, -45, 10, -15)
+#     #wait_while_legs_moving(all_legs)
+#     time.sleep(delay)
+
+#     #input("Press Enter to continue...")
+#     print("*** 2 ***")
+#     #legs_step_angles(front_legs, 65, 10, -5)
+#     legs_step_relative(front_legs, delta_x*step_size, 2*delta_y*step_size, 0)
+#     time.sleep(delay)
+#     #wait_while_legs_moving(all_legs)
     
-    #input("Press Enter to continue...")
-    print("*** 3 ***")
-    legs_move_relative(all_legs, delta_x*step_size, -delta_y*step_size, 0)
-    time.sleep(delay)
-    #wait_while_legs_moving(all_legs)
+#     #input("Press Enter to continue...")
+#     print("*** 3 ***")
+#     legs_move_relative(all_legs, delta_x*step_size, -delta_y*step_size, 0)
+#     time.sleep(delay)
+#     #wait_while_legs_moving(all_legs)
     
-    #input("Press Enter to continue...")
-    print("*** 4 ***")
-    legs_step_relative(mid_legs, delta_x*step_size, delta_y*step_size, 0)
-    time.sleep(delay)
-    #wait_while_legs_moving(all_legs)
+#     #input("Press Enter to continue...")
+#     print("*** 4 ***")
+#     legs_step_relative(mid_legs, delta_x*step_size, delta_y*step_size, 0)
+#     time.sleep(delay)
+#     #wait_while_legs_moving(all_legs)
     
-    #input("Press Enter to continue...")
-    print("*** 5 ***")
-    legs_move_relative(all_legs, delta_x*step_size, -delta_y*step_size, 0)
-    time.sleep(delay)
-    # #wait_while_legs_moving(all_legs)
+#     #input("Press Enter to continue...")
+#     print("*** 5 ***")
+#     legs_move_relative(all_legs, delta_x*step_size, -delta_y*step_size, 0)
+#     time.sleep(delay)
+#     # #wait_while_legs_moving(all_legs)
     
     
+# legs_step_angles(actual_front_legs, 45, 10, -15)
+# legs_step_angles(actual_mid_legs,   10, 10, -15, wait_each=False)
+# legs_step_angles(actual_back_legs, -45, 10, -15)
+# #wait_while_legs_moving(all_legs)
+# time.sleep(delay)
+
+
+
+# Try using rel_zero movements
+
 legs_step_angles(actual_front_legs, 45, 10, -15)
-legs_step_angles(actual_mid_legs,   10, 10, -15, wait_each=False)
+legs_step_angles(actual_mid_legs,   15, 15, -15, wait_each=False)
 legs_step_angles(actual_back_legs, -45, 10, -15)
 #wait_while_legs_moving(all_legs)
 time.sleep(delay)
+set_rel_zero_position()
+
+
+for count in range(3):
+
+    # 2
+    legs_step_relative(front_legs, delta_x*step_size, 2*delta_y*step_size, 0, rel_zero=True)
+    time.sleep(delay)
+
+    #legs_step_relative(mid_legs, delta_x*step_size, delta_y*step_size, 0, rel_zero=True)
+    #time.sleep(delay)
+
+    # 3
+    legs_move_relative(all_legs, delta_x*step_size, -delta_y*step_size, 0)
+    time.sleep(delay)
+    
+    # 4
+    legs_step_relative(mid_legs, 0, 0, 0, rel_zero=True)
+    time.sleep(delay)
+    
+    # 5
+    legs_move_relative(all_legs, delta_x*step_size, -delta_y*step_size, 0)
+    time.sleep(delay)
+
+    # 6
+    legs_step_relative(mid_legs+back_legs, 0, 0, 0, rel_zero=True)
+    time.sleep(delay)
+
+    
 
 
 # Cleanup
