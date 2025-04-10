@@ -20,12 +20,16 @@
 
 
 #import maestro
+import pygame
 import maestro_extended
 import time
 import numpy as np
 import sys
 
 debug = False
+
+
+
 
 
 # Define Motor limits and characteristics
@@ -97,6 +101,26 @@ legs_directions = {
     -135: [(3,4), (2,5), (1,0), -0.7, +0.7],
 }
 
+
+# PS4 Buttons
+ps4_button = {
+    0: 'Cross',
+    1: 'Circle',
+    2: 'Square',
+    3: 'Triangle',
+    4: 'Share',
+    5: 'PS Button',
+    6: 'Options',
+    7: 'L. Stick In',
+    8: 'R. Stick In',
+    9: 'Left Bumper', 
+    10: 'Right Bumper',
+    11: 'D-pad Up',
+    12: 'D-pad Down',
+    13: 'D-pad Left',
+    14: 'D-pad Right',
+    15: 'Touch Pad Click',
+}
 
 
 
@@ -467,6 +491,14 @@ def legs_step_relative(legs, delta_x, delta_y, delta_z, step_z_angle=25, rel_zer
 ############################################################################
 
 
+############
+### MAIN ###
+############
+
+pygame.init()
+j = pygame.joystick.Joystick(0)   # Assume we only have 1
+j.init()
+clock = pygame.time.Clock()
 
 
 print("Starting")
@@ -533,45 +565,67 @@ print("front, mid, back, dx, dy: ", front_legs, mid_legs, back_legs, delta_x, de
 
 # Try using rel_zero movements
 
-legs_step_angles(actual_front_legs, 45, 10, -15)
-legs_step_angles(actual_mid_legs,   0, 0, -15, wait_each=False)
-legs_step_angles(actual_back_legs, -45, 10, -15)
-#wait_while_legs_moving(all_legs)
-time.sleep(delay)
-set_rel_zero_position()
+# legs_step_angles(actual_front_legs, 45, 10, -15)
+# legs_step_angles(actual_mid_legs,   0, 0, -15, wait_each=False)
+# legs_step_angles(actual_back_legs, -45, 10, -15)
+# #wait_while_legs_moving(all_legs)
+# time.sleep(delay)
+# set_rel_zero_position()
 
 
 
-#legs_move_relative((5,), -50, 0, 0, rel_zero=True)
-#time.sleep(delay)
+# #legs_move_relative((5,), -50, 0, 0, rel_zero=True)
+# #time.sleep(delay)
 
 
-for count in range(3):
+# for count in range(3):
 
-    # 2
-    legs_step_relative(front_legs, delta_x*step_size, 2*delta_y*step_size, 0, rel_zero=True)
-    time.sleep(delay)
+#     # 2
+#     legs_step_relative(front_legs, delta_x*step_size, 2*delta_y*step_size, 0, rel_zero=True)
+#     time.sleep(delay)
 
-    #legs_step_relative(mid_legs, delta_x*step_size, delta_y*step_size, 0, rel_zero=True)
-    #time.sleep(delay)
+#     #legs_step_relative(mid_legs, delta_x*step_size, delta_y*step_size, 0, rel_zero=True)
+#     #time.sleep(delay)
 
-    # 3
-    legs_move_relative(all_legs, -delta_x*step_size, -delta_y*step_size, 0)
-    time.sleep(delay)
+#     # 3
+#     legs_move_relative(all_legs, -delta_x*step_size, -delta_y*step_size, 0)
+#     time.sleep(delay)
     
-    # 4
-    legs_step_relative(mid_legs, 0, 0, 0, rel_zero=True)
-    time.sleep(delay)
+#     # 4
+#     legs_step_relative(mid_legs, 0, 0, 0, rel_zero=True)
+#     time.sleep(delay)
     
-    # 5
-    legs_move_relative(all_legs, -delta_x*step_size, -delta_y*step_size, 0)
-    time.sleep(delay)
+#     # 5
+#     legs_move_relative(all_legs, -delta_x*step_size, -delta_y*step_size, 0)
+#     time.sleep(delay)
 
-    # 6
-    legs_step_relative(mid_legs+back_legs, 0, 0, 0, rel_zero=True)
-    time.sleep(delay)
+#     # 6
+#     legs_step_relative(mid_legs+back_legs, 0, 0, 0, rel_zero=True)
+#     time.sleep(delay)
 
-    
+while True:
+    clock.tick(30) # Frame Rate = 30fps    
+
+    events = pygame.event.get()
+    for event in events:
+        if event.type == pygame.JOYBUTTONDOWN:
+            #print("Button Pressed: ", )
+            print(event.dict, event.joy, ps4_button[event.button], 'pressed')
+            #time.sleep(0.5)
+        elif event.type == pygame.JOYBUTTONUP:
+            print(event.dict, event.joy, ps4_button[event.button], 'released')
+            #time.sleep(0.5)
+
+    left_stick_x_axis = j.get_axis(0)
+    left_stick_y_axis = j.get_axis(1)
+    right_stick_x_axis = j.get_axis(2)
+    right_stick_y_axis = j.get_axis(3)
+    arm_left_axis = (j.get_axis(4) + 1) / 2   # change (-1,1) to (0,1)
+    arm_right_axis = (j.get_axis(5) + 1) / 2 
+
+    #print(f"{left_stick_x_axis:.2f},{left_stick_y_axis:.2f},"
+    #      f"{right_stick_x_axis:.2f},{right_stick_y_axis:.2f},"
+    #      f"{arm_left_axis:.2f},{arm_right_axis:.2f},")
 
 
 # Cleanup
