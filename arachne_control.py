@@ -565,12 +565,12 @@ print("front, mid, back, dx, dy: ", front_legs, mid_legs, back_legs, delta_x, de
 
 # Try using rel_zero movements
 
-# legs_step_angles(actual_front_legs, 45, 10, -15)
-# legs_step_angles(actual_mid_legs,   0, 0, -15, wait_each=False)
-# legs_step_angles(actual_back_legs, -45, 10, -15)
-# #wait_while_legs_moving(all_legs)
-# time.sleep(delay)
-# set_rel_zero_position()
+legs_step_angles(actual_front_legs, 45, 10, -15)
+legs_step_angles(actual_mid_legs,   0, 0, -15, wait_each=False)
+legs_step_angles(actual_back_legs, -45, 10, -15)
+#wait_while_legs_moving(all_legs)
+time.sleep(delay)
+set_rel_zero_position()
 
 
 
@@ -626,6 +626,33 @@ while True:
     #print(f"{left_stick_x_axis:.2f},{left_stick_y_axis:.2f},"
     #      f"{right_stick_x_axis:.2f},{right_stick_y_axis:.2f},"
     #      f"{arm_left_axis:.2f},{arm_right_axis:.2f},")
+
+    deadzone = 0.1
+
+    if (abs(left_stick_y_axis) > deadzone) and left_stick_y_axis < 0:
+        print("Forward") 
+        legs_move_relative(all_legs, 0, step_size, 0, rel_zero=True)
+        time.sleep(delay)
+           
+    elif (abs(left_stick_y_axis) > deadzone) and left_stick_y_axis > 0:
+        print("Backwards")
+        legs_move_relative(all_legs, 0, -step_size, 0, rel_zero=True)
+        time.sleep(delay)
+    elif (abs(left_stick_x_axis) > deadzone) and left_stick_x_axis < 0:
+        print("Left") 
+        legs_move_relative(all_legs, -step_size,0, 0, rel_zero=True)
+        time.sleep(delay)
+           
+    elif (abs(left_stick_x_axis) > deadzone) and left_stick_x_axis > 0:
+        print("Right")
+        legs_move_relative(all_legs, step_size,0, 0, rel_zero=True)
+        time.sleep(delay)
+        
+    else:
+        #print("Stop")
+        legs_move_relative(all_legs, 0, 0, 0, rel_zero=True)
+        time.sleep(delay)
+    
 
 
 # Cleanup
