@@ -74,7 +74,7 @@ L1, L2 = 85, 123  # mm  #FIXME: Measure better
 
 ############# Other Definitions ################
 
-ACCEL = 15   # Global acceleration setting for all servos
+ACCEL = 20   # Global acceleration setting for all servos
 SERVO_SPEED = 200
 POS_AVERAGE_COUNT = 3   # Number of position readings to average together
 m_limits_scale = 4   # multiply all of the above for what should actually be written to the Maestro (not sure why)
@@ -456,7 +456,7 @@ def legs_move_relative(legs, delta_x, delta_y, delta_z, rel_zero = False, wait_e
 left_side_legs = (3,4,5)
     
 
-def legs_step_relative(legs, delta_x, delta_y, delta_z, step_z_angle=25, rel_zero = False, wait_end=False, delay=0.15):
+def legs_step_relative(legs, delta_x, delta_y, delta_z, step_z_angle=35, rel_zero = False, wait_end=False, delay=0.15):
     global rel_zero_pos
     print("step relative: legs: ", legs)
     if legs == (): return
@@ -553,55 +553,66 @@ actual_back_legs = (3,2)
 delay = 0.2
 step_size = 30
 
-direction = 180
-#FIXME: 90 degree direction, weird double move
+direction = 0
 
 
 
-front_legs, mid_legs, back_legs, delta_x, delta_y = legs_directions[direction]
-print("front, mid, back, dx, dy: ", front_legs, mid_legs, back_legs, delta_x, delta_y)
+# Set up legs
 
-
-
-# Try using rel_zero movements
 
 legs_step_angles(actual_front_legs, 45, 10, -15)
 legs_step_angles(actual_mid_legs,   0, 0, -15, wait_each=False)
 legs_step_angles(actual_back_legs, -45, 10, -15)
 #wait_while_legs_moving(all_legs)
-time.sleep(delay)
+time.sleep(1.0)
 set_rel_zero_position()
 
 
 
-# #legs_move_relative((5,), -50, 0, 0, rel_zero=True)
-# #time.sleep(delay)
+def walk(direction=0, step_size=30, num_steps=1, delay=0.2):
+
+    front_legs, mid_legs, back_legs, delta_x, delta_y = legs_directions[direction]
+    print("front, mid, back, dx, dy: ", front_legs, mid_legs, back_legs, delta_x, delta_y)
 
 
-# for count in range(3):
+    for count in range(num_steps):
 
-#     # 2
-#     legs_step_relative(front_legs, delta_x*step_size, 2*delta_y*step_size, 0, rel_zero=True)
-#     time.sleep(delay)
+        # 2
+        legs_step_relative(front_legs, delta_x*step_size, 2*delta_y*step_size, 0, rel_zero=True)
+        time.sleep(delay)
 
-#     #legs_step_relative(mid_legs, delta_x*step_size, delta_y*step_size, 0, rel_zero=True)
-#     #time.sleep(delay)
+        #legs_step_relative(mid_legs, delta_x*step_size, delta_y*step_size, 0, rel_zero=True)
+        #time.sleep(delay)
 
-#     # 3
-#     legs_move_relative(all_legs, -delta_x*step_size, -delta_y*step_size, 0)
-#     time.sleep(delay)
-    
-#     # 4
-#     legs_step_relative(mid_legs, 0, 0, 0, rel_zero=True)
-#     time.sleep(delay)
-    
-#     # 5
-#     legs_move_relative(all_legs, -delta_x*step_size, -delta_y*step_size, 0)
-#     time.sleep(delay)
+        # 3
+        legs_move_relative(all_legs, -delta_x*step_size, -delta_y*step_size, 0)
+        time.sleep(delay)
+        
+        # 4
+        legs_step_relative(mid_legs, 0, 0, 0, rel_zero=True)
+        time.sleep(delay)
+        
+        # 5
+        legs_move_relative(all_legs, -delta_x*step_size, -delta_y*step_size, 0)
+        time.sleep(delay)
 
-#     # 6
-#     legs_step_relative(mid_legs+back_legs, 0, 0, 0, rel_zero=True)
-#     time.sleep(delay)
+        # 6
+        legs_step_relative(mid_legs+back_legs, 0, 0, 0, rel_zero=True)
+        time.sleep(delay)
+
+# TEST WALKING in each direction
+# walk(0, 30, 2, delay=0.25)
+# time.sleep(0.5)
+# walk(180, 30, 2, delay=0.25)
+# time.sleep(0.5)
+# walk(90, 30, 2, delay=0.25)
+# time.sleep(0.5)
+# walk(-90, 30, 2, delay=0.25)
+# time.sleep(0.5)
+
+
+
+###### PS4 Remote Control ######
 
 while True:
     clock.tick(30) # Frame Rate = 30fps    
@@ -623,35 +634,67 @@ while True:
     arm_left_axis = (j.get_axis(4) + 1) / 2   # change (-1,1) to (0,1)
     arm_right_axis = (j.get_axis(5) + 1) / 2 
 
-    #print(f"{left_stick_x_axis:.2f},{left_stick_y_axis:.2f},"
+    print(f"{left_stick_x_axis:.2f},{left_stick_y_axis:.2f},")
     #      f"{right_stick_x_axis:.2f},{right_stick_y_axis:.2f},"
     #      f"{arm_left_axis:.2f},{arm_right_axis:.2f},")
 
-    deadzone = 0.1
+    deadzone = 0.15
+    thresh1 = 0.9
+    thresh2 = 0.99
 
-    if (abs(left_stick_y_axis) > deadzone) and left_stick_y_axis < 0:
-        print("Forward") 
-        legs_move_relative(all_legs, 0, step_size, 0, rel_zero=True)
-        time.sleep(delay)
-           
-    elif (abs(left_stick_y_axis) > deadzone) and left_stick_y_axis > 0:
-        print("Backwards")
-        legs_move_relative(all_legs, 0, -step_size, 0, rel_zero=True)
-        time.sleep(delay)
-    elif (abs(left_stick_x_axis) > deadzone) and left_stick_x_axis < 0:
-        print("Left") 
-        legs_move_relative(all_legs, -step_size,0, 0, rel_zero=True)
-        time.sleep(delay)
-           
-    elif (abs(left_stick_x_axis) > deadzone) and left_stick_x_axis > 0:
-        print("Right")
-        legs_move_relative(all_legs, step_size,0, 0, rel_zero=True)
-        time.sleep(delay)
+    x_pos, y_pos = 0, 0  # relative
+
+    # if (abs(left_stick_y_axis) > deadzone) or (abs(left_stick_x_axis) > deadzone):
+    #     x_pos = left_stick_x_axis * step_size
+    #     y_pos = -left_stick_y_axis * step_size
+
+    #     legs_move_relative(all_legs, x_pos, y_pos, 0, rel_zero=True)
+    #     time.sleep(delay)
+
+
+
+    if left_stick_y_axis < -thresh1:
+        #print("Forward") 
+        y_pos = step_size
+    elif left_stick_y_axis < -deadzone:
+        y_pos = step_size//2
+    elif left_stick_y_axis > thresh1:
+        y_pos = -step_size
+    elif left_stick_y_axis > deadzone:
+        y_pos = -step_size//2
         
-    else:
-        #print("Stop")
-        legs_move_relative(all_legs, 0, 0, 0, rel_zero=True)
-        time.sleep(delay)
+    if left_stick_x_axis < -thresh1:
+        #print("Forward") 
+        x_pos = step_size
+    elif left_stick_x_axis < -deadzone:
+        x_pos = step_size//2
+    elif left_stick_x_axis > thresh1:
+        x_pos = -step_size
+    elif left_stick_x_axis > deadzone:
+        x_pos = -step_size//2
+
+
+    legs_move_relative(all_legs, x_pos, y_pos, 0, rel_zero=True)
+    time.sleep(delay)
+           
+    # if (left_stick_y_axis) > deadzone) and left_stick_y_axis > 0:
+    #     #print("Backwards")
+    #     legs_move_relative(all_legs, 0, -step_size, 0, rel_zero=True)
+    #     time.sleep(delay)
+    # elif (abs(left_stick_x_axis) > deadzone) and left_stick_x_axis < 0:
+    #     #print("Left") 
+    #     legs_move_relative(all_legs, -step_size,0, 0, rel_zero=True)
+    #     time.sleep(delay)
+           
+    # elif (abs(left_stick_x_axis) > deadzone) and left_stick_x_axis > 0:
+    #     #print("Right")
+    #     legs_move_relative(all_legs, step_size,0, 0, rel_zero=True)
+    #     time.sleep(delay)
+        
+    #else:
+    #    #print("Stop")
+    #    legs_move_relative(all_legs, 0, 0, 0, rel_zero=True)
+    #    time.sleep(delay)
     
 
 
