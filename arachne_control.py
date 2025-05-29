@@ -17,6 +17,8 @@
 # X wait function is really slow, but the sleeps are not scalable
 # X wait while moving is ot working.  separate thread?
 
+#FIXME: the new motor is 995 instead of 996.  Doesn't move smoothly.  But only in Joystick mode???
+
 
 
 #import maestro
@@ -559,6 +561,7 @@ direction = 0
 
 # Set up legs
 
+legs_step_angles(actual_back_legs, 0, 10, -15)
 
 legs_step_angles(actual_front_legs, 45, 10, -15)
 legs_step_angles(actual_mid_legs,   0, 0, -15, wait_each=False)
@@ -567,6 +570,7 @@ legs_step_angles(actual_back_legs, -45, 10, -15)
 time.sleep(1.0)
 set_rel_zero_position()
 
+#assert False
 
 
 def walk(direction=0, step_size=30, num_steps=1, delay=0.2):
@@ -628,15 +632,15 @@ while True:
             #time.sleep(0.5)
 
     left_stick_x_axis = j.get_axis(0)
-    left_stick_y_axis = j.get_axis(1)
-    right_stick_x_axis = j.get_axis(2)
-    right_stick_y_axis = j.get_axis(3)
-    arm_left_axis = (j.get_axis(4) + 1) / 2   # change (-1,1) to (0,1)
+    left_stick_y_axis = -j.get_axis(1)
+    right_stick_x_axis = j.get_axis(3)
+    right_stick_y_axis = -j.get_axis(4)
+    arm_left_axis = (j.get_axis(2) + 1) / 2   # change (-1,1) to (0,1)
     arm_right_axis = (j.get_axis(5) + 1) / 2 
 
-    print(f"{left_stick_x_axis:.2f},{left_stick_y_axis:.2f},")
-    #      f"{right_stick_x_axis:.2f},{right_stick_y_axis:.2f},"
-    #      f"{arm_left_axis:.2f},{arm_right_axis:.2f},")
+    print(f"{left_stick_x_axis:.2f},{left_stick_y_axis:.2f},"
+          f"{right_stick_x_axis:.2f},{right_stick_y_axis:.2f}," 
+          f"{arm_left_axis:.2f},{arm_right_axis:.2f},")
 
     deadzone = 0.15
     thresh1 = 0.9
@@ -652,30 +656,46 @@ while True:
     #     time.sleep(delay)
 
 
+    #print("RS: ", right_stick_y_axis)
+    #thresh_rs_y = 0.015
 
-    if left_stick_y_axis < -thresh1:
-        #print("Forward") 
-        y_pos = step_size
-    elif left_stick_y_axis < -deadzone:
-        y_pos = step_size//2
-    elif left_stick_y_axis > thresh1:
-        y_pos = -step_size
-    elif left_stick_y_axis > deadzone:
-        y_pos = -step_size//2
+    if abs(right_stick_y_axis) > deadzone:
+        print("muscle_up", right_stick_y_axis)
+        legs_move_relative(all_legs, 0, 0, -50*right_stick_y_axis, rel_zero=True)
+        time.sleep(delay)
+    elif abs(right_stick_y_axis) <= deadzone:
+        legs_move_relative(all_legs, 0, 0, 0, rel_zero=True)
+    #elif right_stick_y_axis < -deadzone:
+    #    print("muscle_down", right_stick_y_axis)
+    #    legs_move_relative((4,), 0, 0, -50*right_stick_y_axis, rel_zero=True)
+    #    time.sleep(delay)
+    #elif right_stick_y_axis
         
-    if left_stick_x_axis < -thresh1:
-        #print("Forward") 
-        x_pos = step_size
-    elif left_stick_x_axis < -deadzone:
-        x_pos = step_size//2
-    elif left_stick_x_axis > thresh1:
-        x_pos = -step_size
-    elif left_stick_x_axis > deadzone:
-        x_pos = -step_size//2
+    
+
+    # if left_stick_y_axis < -thresh1:
+    #     #print("Forward") 
+    #     y_pos = step_size
+    # elif left_stick_y_axis < -deadzone:
+    #     y_pos = step_size//2
+    # elif left_stick_y_axis > thresh1:
+    #     y_pos = -step_size
+    # elif left_stick_y_axis > deadzone:
+    #     y_pos = -step_size//2
+        
+    # if left_stick_x_axis < -thresh1:
+    #     #print("Forward") 
+    #     x_pos = step_size
+    # elif left_stick_x_axis < -deadzone:
+    #     x_pos = step_size//2
+    # elif left_stick_x_axis > thresh1:
+    #     x_pos = -step_size
+    # elif left_stick_x_axis > deadzone:
+    #     x_pos = -step_size//2
 
 
-    legs_move_relative(all_legs, x_pos, y_pos, 0, rel_zero=True)
-    time.sleep(delay)
+    # legs_move_relative(all_legs, x_pos, y_pos, 0, rel_zero=True)
+    # time.sleep(delay)
            
     # if (left_stick_y_axis) > deadzone) and left_stick_y_axis > 0:
     #     #print("Backwards")
