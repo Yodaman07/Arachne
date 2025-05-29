@@ -676,50 +676,17 @@ while True:
         walk(direction, 30, 1)
         walking = True
         time.sleep(delay)
-    elif walking and abs(left_stick_y_axis) <= deadzone:
+    elif not muscle_up and not turning and abs(left_stick_x_axis) > deadzone:
+        if left_stick_x_axis > 0:
+            direction = 90
+        else:
+            direction = -90
+        walk(direction, 30, 1)
+        walking = True
+        time.sleep(delay)
+    elif walking and (abs(left_stick_y_axis) <= deadzone) and (abs(left_stick_x_axis) <= deadzone):
         walking = False
-        
-    #     #print("Forward") 
-    #     y_pos = step_size
-    # elif left_stick_y_axis < -deadzone:
-    #     y_pos = step_size//2
-    # elif left_stick_y_axis > thresh1:
-    #     y_pos = -step_size
-    # elif left_stick_y_axis > deadzone:
-    #     y_pos = -step_size//2
-        
-    # if left_stick_x_axis < -thresh1:
-    #     #print("Forward") 
-    #     x_pos = step_size
-    # elif left_stick_x_axis < -deadzone:
-    #     x_pos = step_size//2
-    # elif left_stick_x_axis > thresh1:
-    #     x_pos = -step_size
-    # elif left_stick_x_axis > deadzone:
-    #     x_pos = -step_size//2
 
-
-    # legs_move_relative(all_legs, x_pos, y_pos, 0, rel_zero=True)
-    # time.sleep(delay)
-           
-    # if (left_stick_y_axis) > deadzone) and left_stick_y_axis > 0:
-    #     #print("Backwards")
-    #     legs_move_relative(all_legs, 0, -step_size, 0, rel_zero=True)
-    #     time.sleep(delay)
-    # elif (abs(left_stick_x_axis) > deadzone) and left_stick_x_axis < 0:
-    #     #print("Left") 
-    #     legs_move_relative(all_legs, -step_size,0, 0, rel_zero=True)
-    #     time.sleep(delay)
-           
-    # elif (abs(left_stick_x_axis) > deadzone) and left_stick_x_axis > 0:
-    #     #print("Right")
-    #     legs_move_relative(all_legs, step_size,0, 0, rel_zero=True)
-    #     time.sleep(delay)
-        
-    #else:
-    #    #print("Stop")
-    #    legs_move_relative(all_legs, 0, 0, 0, rel_zero=True)
-    #    time.sleep(delay)
     
 
 
