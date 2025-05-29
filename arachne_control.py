@@ -489,7 +489,26 @@ def legs_step_relative(legs, delta_x, delta_y, delta_z, step_z_angle=35, rel_zer
         time.sleep(delay)
         
 
-    
+def legs_turn_relative(legs, delta_angle, rel_zero = False, wait_end=False, delay=0.15):  # top joint only
+    reset_ave_servo_pos()
+    get_all_joints_pos()
+    if rel_zero:
+        curr_zero_pos = rel_zero_pos
+    else:
+        curr_zero_pos = CURR_SERVO_POS
+    for leg in legs:
+        theta2 = angle_from_steps(3*leg+0,curr_zero_pos[3*leg+0])
+        theta1 = angle_from_steps(3*leg+1,curr_zero_pos[3*leg+1])
+        theta0 = angle_from_steps(3*leg+2,curr_zero_pos[3*leg+2])
+        if leg in left_side_legs:
+            new_theta0 = theta0+delta_angle
+        else:
+            new_theta0 = theta0-delta_angle
+        move_joint_angle(leg, 2, new_theta0)
+        
+
+
+
 ############################################################################
 
 
@@ -505,51 +524,10 @@ clock = pygame.time.Clock()
 
 print("Starting")
 
-# Get to default walking position
-#reset_all_joints()
-# print(wait_while_legs_moving((0,1,2,3,4,5)))
-# # wait_while_moving()
-# #time.sleep(1)
-# legs_move_angles((0,5,), 60, 0, -20, False)
-# legs_move_angles((2,3,), -60, 0, -20, False)
-# legs_move_angles((1,4,), 0, 0, -20, False)
-# ret = wait_while_legs_moving((0,1,2,3,4,5))
-# print ("Ret:", ret)
-
-
 all_legs = (2,3,4,5,1,0)
 actual_front_legs = (5,0)
 actual_mid_legs = (4,1)
 actual_back_legs = (3,2)
-
-#move_joint_angle(3, 2, -90)
-#servo.setTarget(11, 7400)  #4800, 9408
-
-# legs_step_angles(back_legs, -45 , 10, -25)
-# time.sleep(1)
-# legs_move_relative(back_legs, 0, -80, 0)
-# sys.exit()
-
-
-#legs_step_angles((3,), 30, 40, 0)
-
-# # Walking not too bad
-# for count in range(3):
-
-#     legs_step_angles((5,0,), 55, 10, -5)
-#     legs_step_angles((4,1), 25, 10, -25, wait_each=False)
-#     #legs_step_angles((3,2,), -15, 10, -25)
-#     legs_step_angles((2,), -40, 10, -25)
-    
-#     wait_while_legs_moving(all_legs)
-#     #time.sleep(1)
-
-#     legs_move_relative((0,1,2,4,5), 0, -60, 0, False)  # was 0, -70, 0
-#     wait_while_legs_moving(all_legs)
-#     time.sleep(0.5)
-    
-
-#legs_move_angles(back_legs, -45 , 10, -25)
 
 
 delay = 0.2
@@ -557,12 +535,9 @@ step_size = 30
 
 direction = 0
 
-
-
 # Set up legs
 
 legs_step_angles(actual_back_legs, 0, 10, -15)
-
 legs_step_angles(actual_front_legs, 45, 10, -15)
 legs_step_angles(actual_mid_legs,   0, 0, -15, wait_each=False)
 legs_step_angles(actual_back_legs, -45, 10, -15)
@@ -570,8 +545,9 @@ legs_step_angles(actual_back_legs, -45, 10, -15)
 time.sleep(1.0)
 set_rel_zero_position()
 
-#assert False
+#legs_turn_relative((4,), 20, rel_zero=True)
 
+#assert False
 
 def walk(direction=0, step_size=30, num_steps=1, delay=0.2):
 
@@ -618,6 +594,11 @@ def walk(direction=0, step_size=30, num_steps=1, delay=0.2):
 
 ###### PS4 Remote Control ######
 
+turning = False
+walking = False
+muscle_up = False
+#busy = False
+
 while True:
     clock.tick(30) # Frame Rate = 30fps    
 
@@ -638,9 +619,9 @@ while True:
     arm_left_axis = (j.get_axis(2) + 1) / 2   # change (-1,1) to (0,1)
     arm_right_axis = (j.get_axis(5) + 1) / 2 
 
-    print(f"{left_stick_x_axis:.2f},{left_stick_y_axis:.2f},"
-          f"{right_stick_x_axis:.2f},{right_stick_y_axis:.2f}," 
-          f"{arm_left_axis:.2f},{arm_right_axis:.2f},")
+    #print(f"{left_stick_x_axis:.2f},{left_stick_y_axis:.2f},"
+    #      f"{right_stick_x_axis:.2f},{right_stick_y_axis:.2f}," 
+    #      f"{arm_left_axis:.2f},{arm_right_axis:.2f},")
 
     deadzone = 0.15
     thresh1 = 0.9
@@ -659,21 +640,45 @@ while True:
     #print("RS: ", right_stick_y_axis)
     #thresh_rs_y = 0.015
 
-    if abs(right_stick_y_axis) > deadzone:
-        print("muscle_up", right_stick_y_axis)
-        legs_move_relative(all_legs, 0, 0, -50*right_stick_y_axis, rel_zero=True)
+    #turning = False
+
+    # Turning
+    if not muscle_up and abs(right_stick_x_axis) > deadzone:
+        direction = right_stick_x_axis/abs(right_stick_x_axis)
+        legs_turn_relative(all_legs, 20*direction, True) #45*right_stick_x_axis, rel_zero=True)
         time.sleep(delay)
-    elif abs(right_stick_y_axis) <= deadzone:
+        legs_step_relative(all_legs, 0, 0, 0, rel_zero = True)
+        turning = True
+        time.sleep(delay)
+    elif turning and abs(right_stick_y_axis) <= deadzone:
+        legs_turn_relative(all_legs, 0, rel_zero=True)
+        time.sleep(delay)
+        turning = False
+
+    # Muscle-up
+    if not turning and abs(right_stick_y_axis) > deadzone:
+        #print("muscle_up", right_stick_y_axis)
+        legs_move_relative(all_legs, 0, 0, -50*right_stick_y_axis, rel_zero=True)
+        muscle_up = True
+        time.sleep(delay)
+    elif muscle_up and abs(right_stick_y_axis) <= deadzone:
         legs_move_relative(all_legs, 0, 0, 0, rel_zero=True)
-    #elif right_stick_y_axis < -deadzone:
-    #    print("muscle_down", right_stick_y_axis)
-    #    legs_move_relative((4,), 0, 0, -50*right_stick_y_axis, rel_zero=True)
-    #    time.sleep(delay)
-    #elif right_stick_y_axis
-        
+        muscle_up = False
     
 
-    # if left_stick_y_axis < -thresh1:
+    # Walking
+
+    if not muscle_up and not turning and abs(left_stick_y_axis) > deadzone:
+        if left_stick_y_axis > 0:
+            direction = 0
+        else:
+            direction = 180
+        walk(direction, 30, 1)
+        walking = True
+        time.sleep(delay)
+    elif walking and abs(left_stick_y_axis) <= deadzone:
+        walking = False
+        
     #     #print("Forward") 
     #     y_pos = step_size
     # elif left_stick_y_axis < -deadzone:
