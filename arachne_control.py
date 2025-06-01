@@ -506,7 +506,19 @@ def legs_turn_relative(legs, delta_angle, rel_zero = False, wait_end=False, dela
             new_theta0 = theta0-delta_angle
         move_joint_angle(leg, 2, new_theta0)
         
-
+def legs_lift_angle_relative(legs, delta_angle, rel_zero = False, wait_end=False, delay=0.15):  # mid joint only
+    reset_ave_servo_pos()
+    get_all_joints_pos()
+    if rel_zero:
+        curr_zero_pos = rel_zero_pos
+    else:
+        curr_zero_pos = CURR_SERVO_POS
+    for leg in legs:
+        theta2 = angle_from_steps(3*leg+0,curr_zero_pos[3*leg+0])
+        theta1 = angle_from_steps(3*leg+1,curr_zero_pos[3*leg+1])
+        theta0 = angle_from_steps(3*leg+2,curr_zero_pos[3*leg+2])
+        new_theta1 = theta1+delta_angle
+        move_joint_angle(leg, 1, new_theta1)
 
 
 ############################################################################
@@ -542,8 +554,9 @@ legs_step_angles(actual_front_legs, 45, 10, -15)
 legs_step_angles(actual_mid_legs,   0, 0, -15, wait_each=False)
 legs_step_angles(actual_back_legs, -45, 10, -15)
 #wait_while_legs_moving(all_legs)
-time.sleep(1.0)
 set_rel_zero_position()
+time.sleep(1.0)
+
 
 #legs_turn_relative((4,), 20, rel_zero=True)
 
@@ -590,104 +603,145 @@ def walk(direction=0, step_size=30, num_steps=1, delay=0.2):
 # walk(-90, 30, 2, delay=0.25)
 # time.sleep(0.5)
 
+def start_ps4_ctrl():
+
+    ###### PS4 Remote Control ######
+
+    turning = False
+    walking = False
+    muscle_up = False
+    #busy = False
+
+    while True:
+        clock.tick(30) # Frame Rate = 30fps    
+
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.JOYBUTTONDOWN:
+                #print("Button Pressed: ", )
+                print(event.dict, event.joy, ps4_button[event.button], 'pressed')
+                #time.sleep(0.5)
+            elif event.type == pygame.JOYBUTTONUP:
+                print(event.dict, event.joy, ps4_button[event.button], 'released')
+                #time.sleep(0.5)
+
+        left_stick_x_axis = j.get_axis(0)
+        left_stick_y_axis = -j.get_axis(1)
+        right_stick_x_axis = j.get_axis(3)
+        right_stick_y_axis = -j.get_axis(4)
+        arm_left_axis = (j.get_axis(2) + 1) / 2   # change (-1,1) to (0,1)
+        arm_right_axis = (j.get_axis(5) + 1) / 2 
+
+        #print(f"{left_stick_x_axis:.2f},{left_stick_y_axis:.2f},"
+        #      f"{right_stick_x_axis:.2f},{right_stick_y_axis:.2f}," 
+        #      f"{arm_left_axis:.2f},{arm_right_axis:.2f},")
+
+        deadzone = 0.15
+        thresh1 = 0.9
+        thresh2 = 0.99
+
+        x_pos, y_pos = 0, 0  # relative
+
+        # if (abs(left_stick_y_axis) > deadzone) or (abs(left_stick_x_axis) > deadzone):
+        #     x_pos = left_stick_x_axis * step_size
+        #     y_pos = -left_stick_y_axis * step_size
+
+        #     legs_move_relative(all_legs, x_pos, y_pos, 0, rel_zero=True)
+        #     time.sleep(delay)
 
 
-###### PS4 Remote Control ######
+        #print("RS: ", right_stick_y_axis)
+        #thresh_rs_y = 0.015
 
-turning = False
-walking = False
-muscle_up = False
-#busy = False
+        #turning = False
 
-while True:
-    clock.tick(30) # Frame Rate = 30fps    
+        # Turning
+        if not muscle_up and abs(right_stick_x_axis) > deadzone:
+            direction = right_stick_x_axis/abs(right_stick_x_axis)
+            legs_turn_relative(all_legs, 20*direction, True) #45*right_stick_x_axis, rel_zero=True)
+            time.sleep(delay)
+            legs_step_relative(all_legs, 0, 0, 0, rel_zero = True)
+            turning = True
+            time.sleep(delay)
+        elif turning and abs(right_stick_y_axis) <= deadzone:
+            legs_turn_relative(all_legs, 0, rel_zero=True)
+            time.sleep(delay)
+            turning = False
 
-    events = pygame.event.get()
-    for event in events:
-        if event.type == pygame.JOYBUTTONDOWN:
-            #print("Button Pressed: ", )
-            print(event.dict, event.joy, ps4_button[event.button], 'pressed')
-            #time.sleep(0.5)
-        elif event.type == pygame.JOYBUTTONUP:
-            print(event.dict, event.joy, ps4_button[event.button], 'released')
-            #time.sleep(0.5)
+        # Muscle-up
+        if not turning and abs(right_stick_y_axis) > deadzone:
+            #print("muscle_up", right_stick_y_axis)
+            legs_move_relative(all_legs, 0, 0, -50*right_stick_y_axis, rel_zero=True)
+            muscle_up = True
+            time.sleep(delay)
+        elif muscle_up and abs(right_stick_y_axis) <= deadzone:
+            legs_move_relative(all_legs, 0, 0, 0, rel_zero=True)
+            muscle_up = False
+        
 
-    left_stick_x_axis = j.get_axis(0)
-    left_stick_y_axis = -j.get_axis(1)
-    right_stick_x_axis = j.get_axis(3)
-    right_stick_y_axis = -j.get_axis(4)
-    arm_left_axis = (j.get_axis(2) + 1) / 2   # change (-1,1) to (0,1)
-    arm_right_axis = (j.get_axis(5) + 1) / 2 
+        # Walking
 
-    #print(f"{left_stick_x_axis:.2f},{left_stick_y_axis:.2f},"
-    #      f"{right_stick_x_axis:.2f},{right_stick_y_axis:.2f}," 
-    #      f"{arm_left_axis:.2f},{arm_right_axis:.2f},")
+        if not muscle_up and not turning and abs(left_stick_y_axis) > deadzone:
+            if left_stick_y_axis > 0:
+                direction = 0
+            else:
+                direction = 180
+            walk(direction, 30, 1)
+            walking = True
+            time.sleep(delay)
+        elif not muscle_up and not turning and abs(left_stick_x_axis) > deadzone:
+            if left_stick_x_axis > 0:
+                direction = 90
+            else:
+                direction = -90
+            walk(direction, 30, 1)
+            walking = True
+            time.sleep(delay)
+        elif walking and (abs(left_stick_y_axis) <= deadzone) and (abs(left_stick_x_axis) <= deadzone):
+            walking = False
 
-    deadzone = 0.15
-    thresh1 = 0.9
-    thresh2 = 0.99
+        
 
-    x_pos, y_pos = 0, 0  # relative
-
-    # if (abs(left_stick_y_axis) > deadzone) or (abs(left_stick_x_axis) > deadzone):
-    #     x_pos = left_stick_x_axis * step_size
-    #     y_pos = -left_stick_y_axis * step_size
-
-    #     legs_move_relative(all_legs, x_pos, y_pos, 0, rel_zero=True)
-    #     time.sleep(delay)
+def crab_walk_half(side="L", dist=30, step=1, delay=1):
 
 
-    #print("RS: ", right_stick_y_axis)
-    #thresh_rs_y = 0.015
+    if side=="L":
+        pivot_leg = (1,)
+        turn_legs = (5,3)
+        other_legs = (0,2,4)
+        angle=-dist
+    else:
+        pivot_leg = (4,)
+        turn_legs = (0,2)
+        other_legs = (1,3,5)
+        angle=dist
 
-    #turning = False
 
-    # Turning
-    if not muscle_up and abs(right_stick_x_axis) > deadzone:
-        direction = right_stick_x_axis/abs(right_stick_x_axis)
-        legs_turn_relative(all_legs, 20*direction, True) #45*right_stick_x_axis, rel_zero=True)
-        time.sleep(delay)
-        legs_step_relative(all_legs, 0, 0, 0, rel_zero = True)
-        turning = True
-        time.sleep(delay)
-    elif turning and abs(right_stick_y_axis) <= deadzone:
-        legs_turn_relative(all_legs, 0, rel_zero=True)
-        time.sleep(delay)
-        turning = False
+  
+    set_rel_zero_position()
 
-    # Muscle-up
-    if not turning and abs(right_stick_y_axis) > deadzone:
-        #print("muscle_up", right_stick_y_axis)
-        legs_move_relative(all_legs, 0, 0, -50*right_stick_y_axis, rel_zero=True)
-        muscle_up = True
-        time.sleep(delay)
-    elif muscle_up and abs(right_stick_y_axis) <= deadzone:
-        legs_move_relative(all_legs, 0, 0, 0, rel_zero=True)
-        muscle_up = False
+    legs_lift_angle_relative(other_legs, 30, rel_zero=False)
+    time.sleep(1)
+    legs_turn_relative(turn_legs, angle, rel_zero=False)
+    time.sleep(1)
+    legs_lift_angle_relative(other_legs, -30, rel_zero=False)
+    time.sleep(1)
+    legs_step_relative(turn_legs, 0, 0, 0, 30, True)
+    time.sleep(1)
+
+def crab_walk(steps = 1):
+    for step in range(int(steps)):
+        crab_walk_half("R")
+        crab_walk_half("L")
+
+crab_walk(3)
+
+
+
+
     
 
-    # Walking
 
-    if not muscle_up and not turning and abs(left_stick_y_axis) > deadzone:
-        if left_stick_y_axis > 0:
-            direction = 0
-        else:
-            direction = 180
-        walk(direction, 30, 1)
-        walking = True
-        time.sleep(delay)
-    elif not muscle_up and not turning and abs(left_stick_x_axis) > deadzone:
-        if left_stick_x_axis > 0:
-            direction = 90
-        else:
-            direction = -90
-        walk(direction, 30, 1)
-        walking = True
-        time.sleep(delay)
-    elif walking and (abs(left_stick_y_axis) <= deadzone) and (abs(left_stick_x_axis) <= deadzone):
-        walking = False
-
-    
 
 
 # Cleanup
