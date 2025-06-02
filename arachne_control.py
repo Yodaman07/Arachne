@@ -36,7 +36,7 @@ debug = False
 
 # Define Motor limits and characteristics
 
-m_limits = [
+m_limits_old = [
     
     # Right Side
 
@@ -68,6 +68,43 @@ m_limits = [
     [752, 1504, 1, 1147.0, -45, 799.25, 999],
     [688, 1296, 1, 780.75, 45, 1139.5, 999],
     ]
+
+
+
+
+m_limits = [
+    
+    # Right Side
+
+    # FIXME: Not using min/max right now.  Do I need to?
+    
+    [608, 1920, 1, 831, 90, 1773.5, 999],  # min, max, direction, nominal [0 degrees], setting [calibrated], calibrated angle. slope [calc'd later]
+    [800, 1856, -1, 964, -45, 1856, 999],  # 1
+    [1328, 2000, 1, 1380, -45, 1458.25, 999],  # 2
+    
+    [64, 1136, -1, 1040, 38, 646.25, 999],  # 3
+    [800, 1840, -1, 1160, -45, 1643.0, 999],  # 4
+    [1568, 2496, 1, 1901.25, 45, 2189.5, 999 ],  # 5
+
+    [800, 2096, 1, 1250.0, 90, 1976.25, 999],  # 6
+    [800, 1504, -1, 1022, -45, 1668.0, 999],  # 7
+    [736, 1632, -1, 1320.0, -90, 1931.75, 999], # 8
+    
+    # Left Side
+    
+    [704, 1904, -1, 1468.25, 90, 832.0, 999],  #  9
+    [1088, 1840, 1, 1600, -45, 929.25, 999],   # 10
+    [1248, 2080, 1, 1470.00, -90, 974.75, 999 ],   # 11
+    
+    [608, 1760, -1, 1615, 90, 784.0, 999], #12
+    [752, 1600, 1, 1414.25, -45, 891.75, 999], #13
+    [1008, 2000, 1, 1556.75, 45, 1937.25, 999], #14
+    
+    [608, 1904, -1, 1734.0, 90, 803.0, 999], #15
+    [752, 1504, 1, 1427.0, -45, 799.25, 999], #16
+    [688, 1296, 1, 1296, 45, 1139.5, 999], #17
+    ]
+
 
 
 L1, L2 = 85, 123  # mm  #FIXME: Measure better
@@ -272,7 +309,7 @@ def move_joint(leg=0, joint=0, amount=50, wait=True):  # Amount goes 0 to 100
     print(joint_min, joint_max, joint_dir, target)
     
     servo.setTarget(servo_num, target)
-    if wait: wait_while_moving()
+    #if wait: wait_while_moving()
 
 
 def move_joint_angle(leg=0, joint=0, angle=0, wait=False, wait_till_execute = False): 
@@ -292,7 +329,7 @@ def move_joint_angle(leg=0, joint=0, angle=0, wait=False, wait_till_execute = Fa
         servo.setTarget(servo_num, target)
     else:
         NEXT_SERVO_POS[servo_num] = target
-    if not wait_till_execute and wait: servo.wait_while_moving(servo_num)
+    #if not wait_till_execute and wait: servo.wait_while_moving(servo_num)
 
 
 def execute_move_joint_angle(wait = False):
@@ -514,9 +551,10 @@ def legs_lift_angle_relative(legs, delta_angle, rel_zero = False, wait_end=False
     else:
         curr_zero_pos = CURR_SERVO_POS
     for leg in legs:
-        theta2 = angle_from_steps(3*leg+0,curr_zero_pos[3*leg+0])
-        theta1 = angle_from_steps(3*leg+1,curr_zero_pos[3*leg+1])
-        theta0 = angle_from_steps(3*leg+2,curr_zero_pos[3*leg+2])
+        #theta2 = angle_from_steps(3*leg+0,curr_zero_pos[3*leg+0])
+        #theta1 = angle_from_steps(3*leg+1,curr_zero_pos[3*leg+1])
+        #theta0 = angle_from_steps(3*leg+2,curr_zero_pos[3*leg+2])
+        theta1 = curr_zero_pos[3*leg+1]  # FIXME: bypass calibration
         new_theta1 = theta1+delta_angle
         move_joint_angle(leg, 1, new_theta1)
 
@@ -551,17 +589,51 @@ direction = 0
 
 #legs_step_angles(actual_back_legs, 0, 10, -15)
 #legs_step_angles(actual_front_legs, 45, 10, -15)
-legs_step_angles(actual_front_legs, 65, 10, -15) ########FIXME: Temp
-legs_step_angles(actual_mid_legs,   0, 0, -15, wait_each=False)
-legs_step_angles(actual_back_legs, -45, 10, -15)
+#legs_step_angles(actual_front_legs, 65, 10, -15) ########FIXME: Temp
+#legs_step_angles(actual_mid_legs,   0, 0, -15, wait_each=False)
+#legs_step_angles(actual_back_legs, -45, 10, -15)
 #wait_while_legs_moving(all_legs)
-set_rel_zero_position()
+reset_all_joints()
 time.sleep(1.0)
+get_all_joints_pos()
+set_rel_zero_position()
+time.sleep(1)
 
-
+#move_joint_angle(2,1, 35)
+#legs_lift_angle_relative((2,), 30, False)
+#time.sleep(1.0)
+#move_joint_angle(2,1, 0)
+#legs_lift_angle_relative((2,), 30, False)
+#time.sleep(1.0)
+#legs_turn_relative((2,), 30, False)
 #legs_turn_relative((4,), 20, rel_zero=True)
 
-#assert False
+
+def legs_lift(legs, steps):
+    for leg in legs:
+        move_joint_angle(leg, 1, steps)
+
+def legs_turn(legs,steps):
+    for leg in legs:
+        move_joint_angle(leg, 2, steps)
+
+#legs_turn((0,1,2, 3, 4, 5), 30)
+#time.sleep(1)
+#legs_turn((0,1,2, 3, 4,5), 0)
+#time.sleep(1)
+
+
+#legs_lift((0,1,2, 3, 4, 5), 30)
+#time.sleep(1)
+#legs_lift((0,1,2, 3, 4, 5), 0)
+#time.sleep(1)
+
+legs_lift((0,), 0)
+time.sleep(1)
+#legs_lift((3,4,5), 0)
+
+
+assert False
 
 def walk(direction=0, step_size=30, num_steps=1, delay=0.2):
 
@@ -723,19 +795,19 @@ def crab_walk_half(side="L", dist=30, step=1, delay=1):
 
     legs_lift_angle_relative(other_legs, 30, rel_zero=False)
     time.sleep(1)
-    legs_turn_relative(turn_legs, angle, rel_zero=False)
+    #legs_turn_relative(turn_legs, angle, rel_zero=False)
+    #time.sleep(1)
+    legs_lift_angle_relative(other_legs, 0, rel_zero=False)
     time.sleep(1)
-    legs_lift_angle_relative(other_legs, -30, rel_zero=False)
-    time.sleep(1)
-    legs_step_relative(turn_legs, 0, 0, 0, 30, True)
-    time.sleep(1)
+    #legs_step_relative(turn_legs, 0, 0, 0, 30, False)
+    #time.sleep(1)
 
 def crab_walk(steps = 1):
     for step in range(int(steps)):
         crab_walk_half("R")
-        crab_walk_half("L")
+        #crab_walk_half("L")
 
-crab_walk(3)
+crab_walk(1)
 
 
 
