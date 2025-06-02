@@ -549,8 +549,9 @@ direction = 0
 
 # Set up legs
 
-legs_step_angles(actual_back_legs, 0, 10, -15)
-legs_step_angles(actual_front_legs, 45, 10, -15)
+#legs_step_angles(actual_back_legs, 0, 10, -15)
+#legs_step_angles(actual_front_legs, 45, 10, -15)
+legs_step_angles(actual_front_legs, 65, 10, -15) ########FIXME: Temp
 legs_step_angles(actual_mid_legs,   0, 0, -15, wait_each=False)
 legs_step_angles(actual_back_legs, -45, 10, -15)
 #wait_while_legs_moving(all_legs)
@@ -706,9 +707,9 @@ def crab_walk_half(side="L", dist=30, step=1, delay=1):
 
 
     if side=="L":
-        pivot_leg = (1,)
-        turn_legs = (5,3)
-        other_legs = (0,2,4)
+        pivot_leg = (2,) #(1,)
+        turn_legs = (5,4) #(5,3)
+        other_legs = (0,1,3,) #(0,2,4)
         angle=-dist
     else:
         pivot_leg = (4,)
