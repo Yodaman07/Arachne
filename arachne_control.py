@@ -617,23 +617,23 @@ def legs_turn(legs,steps):
     for leg in legs:
         move_joint_angle(leg, 2, steps)
 
-#legs_turn((0,1,2, 3, 4, 5), 30)
-#time.sleep(1)
-#legs_turn((0,1,2, 3, 4,5), 0)
-#time.sleep(1)
+# legs_turn((0,1,2, 3, 4, 5), -30)
+# time.sleep(1)
+# legs_turn((0,1,2, 3, 4,5), 0)
+# time.sleep(1)
 
 
-#legs_lift((0,1,2, 3, 4, 5), 30)
-#time.sleep(1)
-#legs_lift((0,1,2, 3, 4, 5), 0)
-#time.sleep(1)
+# legs_lift((0,1,2, 3, 4, 5), 30)
+# time.sleep(1)
+# legs_lift((0,1,2, 3, 4, 5), 0)
+# time.sleep(1)
 
-legs_turn((0,5), 0)
-time.sleep(1)
+#legs_turn((0,5), 0)
+#time.sleep(1)
 #legs_lift((3,4,5), 0)
 
 
-assert False
+#assert False
 
 def walk(direction=0, step_size=30, num_steps=1, delay=0.2):
 
@@ -779,35 +779,42 @@ def crab_walk_half(side="L", dist=30, step=1, delay=1):
 
 
     if side=="L":
-        pivot_leg = (2,) #(1,)
-        turn_legs = (5,4) #(5,3)
-        other_legs = (0,1,3,) #(0,2,4)
+        pivot_leg = (1,)
+        turn_legs = (5,3)
+        other_legs = (0,2,4)
         angle=-dist
     else:
         pivot_leg = (4,)
         turn_legs = (0,2)
         other_legs = (1,3,5)
-        angle=dist
+        angle=-dist
 
 
   
     set_rel_zero_position()
 
-    legs_lift_angle_relative(other_legs, 30, rel_zero=False)
+    legs_lift(other_legs, 30)
     time.sleep(1)
-    #legs_turn_relative(turn_legs, angle, rel_zero=False)
-    #time.sleep(1)
-    legs_lift_angle_relative(other_legs, 0, rel_zero=False)
+    legs_turn(turn_legs, angle)
     time.sleep(1)
+    legs_lift(other_legs, 0)
+    time.sleep(1)
+    legs_lift(turn_legs, 30)
+    time.sleep(1)
+    legs_turn(turn_legs, 0)
+    time.sleep(1)
+    legs_lift(turn_legs, 0)
+    time.sleep(1)
+    
     #legs_step_relative(turn_legs, 0, 0, 0, 30, False)
     #time.sleep(1)
 
 def crab_walk(steps = 1):
     for step in range(int(steps)):
         crab_walk_half("R")
-        #crab_walk_half("L")
+        crab_walk_half("L")
 
-crab_walk(1)
+crab_walk(3)
 
 
 
