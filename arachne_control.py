@@ -36,43 +36,43 @@ debug = False
 
 # Define Motor limits and characteristics
 
-m_limits_old = [
+m_limits = [
     
     # Right Side
 
     # FIXME: Not using min/max right now.  Do I need to?
     
-    [608, 1920, 1, 1122.25, 90, 1773.5, 999],  # min, max, direction, nominal [0 degrees], setting [calibrated], calibrated angle. slope [calc'd later]
-    [800, 1856, -1, 1277.5, -45, 1512.50, 999],  # 1
-    [1328, 2000, -1, 1815.25, 45, 1458.25, 999],  # 2
+    [608, 1920, 1, 831.25, 90, 1773.5, 999],  # min, max, direction, nominal [0 degrees], setting [calibrated], calibrated angle. slope [calc'd later]
+    [544, 1152, -1, 863, 45, 54, 999],  # 1
+    [1248, 1840, -1, 1380, -45, 1840, 999],  # 2
     
-    [64, 1136, -1, 848.25, 38, 646.25, 999],  # 3
-    [800, 1840, -1, 1405.75, -45, 1643.0, 999],  # 4
-    [1568, 2496, 1, 1901.25, 45, 2189.5, 999 ],  # 5
+    [64, 1136, -1, 1040, 38, 646.25, 999],  # 3
+    [608, 1328, -1, 1020, 45, 608.0, 999],  # 4
+    [1568, 2128, 1, 1901.25, 45, 2073, 999 ],  # 5
 
     [800, 2096, 1, 1250.0, 90, 1976.25, 999],  # 6
-    [1008, 2096, -1, 1441.75, -45, 1668.0, 999],  # 7
-    [1008, 2048, -1, 1119.0, -90, 1931.75, 999], # 8
+    [608, 1344, -1, 1060, 45, 608.0, 999],  # 7
+    [736, 1632, -1, 1320, 45, 736, 999], # 8
     
     # Left Side
     
     [704, 1904, -1, 1468.25, 90, 832.0, 999],  #  9
-    [496, 1600, 1, 1195.25, -45, 929.25, 999],   # 10
-    [800, 2000, 1, 1941.00, -90, 974.75, 999 ],   # 11
+    [1248, 1968, 1, 1529, 45, 1968, 999],   # 10
+    [1248, 2080, 1, 1470.00, 45, 2031, 999 ],   # 11
     
-    [608, 1904, -1, 1435.25, 90, 784.0, 999],
-    [752, 1600, 1, 1214.25, -45, 891.75, 999],
-    [1008, 2000, 1, 1556.75, 45, 1937.25, 999],
+    [608, 1760, -1, 1615, 90, 784.0, 999], #12
+    [1328, 2000, 1, 1664, 45, 2000, 999],  #13
+    [1008, 1824, 1, 1556.75, 45, 1790, 999], #14
     
-    [608, 1904, -1, 1500.0, 90, 803.0, 999],
-    [752, 1504, 1, 1147.0, -45, 799.25, 999],
-    [688, 1296, 1, 780.75, 45, 1139.5, 999],
+    [608, 1904, -1, 1734.0, 90, 803.0, 999], #15
+    [1232, 1952, 1, 1593.0, 45, 1952, 999], #16
+    [848, 1312, 1, 1296, -45, 848, 999], #17
     ]
 
 
 
 
-m_limits = [
+m_limits_2 = [
     
     # Right Side
 
@@ -599,6 +599,8 @@ get_all_joints_pos()
 set_rel_zero_position()
 time.sleep(1)
 
+#assert False
+
 #move_joint_angle(2,1, 35)
 #legs_lift_angle_relative((2,), 30, False)
 #time.sleep(1.0)
@@ -617,16 +619,16 @@ def legs_turn(legs,steps):
     for leg in legs:
         move_joint_angle(leg, 2, steps)
 
-# legs_turn((0,1,2, 3, 4, 5), -30)
-# time.sleep(1)
-# legs_turn((0,1,2, 3, 4,5), 0)
-# time.sleep(1)
+#legs_turn((0,1,2, 3, 4, 5), -30)
+#time.sleep(1)
+#legs_turn((0,1,2, 3, 4,5), 0)
+#time.sleep(1)
 
 
-# legs_lift((0,1,2, 3, 4, 5), 30)
-# time.sleep(1)
-# legs_lift((0,1,2, 3, 4, 5), 0)
-# time.sleep(1)
+#legs_lift((0,1,2, 3, 4, 5), 45)
+#time.sleep(1)
+#legs_lift((0,1,2, 3, 4, 5), 0)
+#time.sleep(1)
 
 #legs_turn((0,5), 0)
 #time.sleep(1)
@@ -775,44 +777,47 @@ def start_ps4_ctrl():
 
         
 
-def crab_walk_half(side="L", dist=30, step=1, delay=1):
+def crab_walk_half(side="L", dist=30, step=1, delay=1.45, last=False):
 
 
     if side=="L":
         pivot_leg = (1,)
-        turn_legs = (5,3)
+        turn_legs = (5,3, 1)
         other_legs = (0,2,4)
         angle=-dist
     else:
         pivot_leg = (4,)
-        turn_legs = (0,2)
+        turn_legs = (0,2, 4)
         other_legs = (1,3,5)
         angle=-dist
 
 
   
-    set_rel_zero_position()
+    #set_rel_zero_position()
 
-    legs_lift(other_legs, 30)
-    time.sleep(1)
+    if not last:
+        legs_lift(other_legs, 30)
+        time.sleep(delay)
     legs_turn(turn_legs, angle)
-    time.sleep(1)
+    time.sleep(delay)
     legs_lift(other_legs, 0)
-    time.sleep(1)
+    time.sleep(delay)
+
     legs_lift(turn_legs, 30)
-    time.sleep(1)
+    time.sleep(delay)
     legs_turn(turn_legs, 0)
-    time.sleep(1)
-    legs_lift(turn_legs, 0)
-    time.sleep(1)
+    time.sleep(delay)
+    if last:
+        legs_lift(turn_legs, 0)
+        time.sleep(delay)
     
     #legs_step_relative(turn_legs, 0, 0, 0, 30, False)
-    #time.sleep(1)
+    #time.sleep(delay)
 
 def crab_walk(steps = 1):
     for step in range(int(steps)):
-        crab_walk_half("R")
-        crab_walk_half("L")
+        crab_walk_half("R", last=False)
+        crab_walk_half("L", last=True)
 
 crab_walk(3)
 
