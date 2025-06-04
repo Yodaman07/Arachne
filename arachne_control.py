@@ -52,13 +52,13 @@ m_limits = [
 
     [800, 2096, 1, 1250.0, 90, 1976.25, 999],  # 6
     [608, 1344, -1, 1019, 45, 608.0, 999],  # 7
-    [736, 1632, -1, 1270, 45, 736, 999], # 8
+    [736, 1632, -1, 1400, 45, 736, 999], # 8   # was x, x, 1270
     
     # Left Side
     
     [704, 1904, -1, 1468.25, 90, 832.0, 999],  #  9
     [1248, 1968, 1, 1580, 45, 1968, 999],   # 10
-    [1248, 2080, 1, 1550.00, 45, 2031, 999 ],   # 11
+    [1248, 2080, 1, 1450.00, 45, 2031, 999 ],   # 11   # was x, x, 1550
     
     [608, 1760, -1, 1615, 90, 784.0, 999], #12
     [1328, 2000, 1, 1556, 45, 2000, 999],  #13
@@ -580,35 +580,19 @@ actual_mid_legs = (4,1)
 actual_back_legs = (3,2)
 
 
-delay = 0.4
-step_size = 30
-
-direction = 0
+#delay = 0.4
+#step_size = 30
+#direction = 0
 
 # Set up legs
 
-#legs_step_angles(actual_back_legs, 0, 10, -15)
-#legs_step_angles(actual_front_legs, 45, 10, -15)
-#legs_step_angles(actual_front_legs, 65, 10, -15) ########FIXME: Temp
-#legs_step_angles(actual_mid_legs,   0, 0, -15, wait_each=False)
-#legs_step_angles(actual_back_legs, -45, 10, -15)
-#wait_while_legs_moving(all_legs)
 reset_all_joints()
 time.sleep(1.0)
 get_all_joints_pos()
 set_rel_zero_position()
 time.sleep(1)
 
-#assert False
 
-#move_joint_angle(2,1, 35)
-#legs_lift_angle_relative((2,), 30, False)
-#time.sleep(1.0)
-#move_joint_angle(2,1, 0)
-#legs_lift_angle_relative((2,), 30, False)
-#time.sleep(1.0)
-#legs_turn_relative((2,), 30, False)
-#legs_turn_relative((4,), 20, rel_zero=True)
 
 
 def legs_lift(legs, steps):
@@ -635,53 +619,9 @@ def legs_turn(legs,steps):
 #legs_lift((3,4,5), 0)
 
 
-#assert False
-
-def walk(direction=0, step_size=30, num_steps=1, delay=0.2):
-
-    front_legs, mid_legs, back_legs, delta_x, delta_y = legs_directions[direction]
-    print("front, mid, back, dx, dy: ", front_legs, mid_legs, back_legs, delta_x, delta_y)
 
 
-    for count in range(num_steps):
-
-        # 2
-        legs_step_relative(front_legs, delta_x*step_size, 2*delta_y*step_size, 0, rel_zero=True)
-        time.sleep(delay)
-
-        #legs_step_relative(mid_legs, delta_x*step_size, delta_y*step_size, 0, rel_zero=True)
-        #time.sleep(delay)
-
-        # 3
-        legs_move_relative(all_legs, -delta_x*step_size, -delta_y*step_size, 0)
-        time.sleep(delay)
-        
-        # 4
-        legs_step_relative(mid_legs, 0, 0, 0, rel_zero=True)
-        time.sleep(delay)
-        
-        # 5
-        legs_move_relative(all_legs, -delta_x*step_size, -delta_y*step_size, 0)
-        time.sleep(delay)
-
-        # 6
-        legs_step_relative(mid_legs+back_legs, 0, 0, 0, rel_zero=True)
-        time.sleep(delay)
-
-# TEST WALKING in each direction
-#walk(0, 15, 3, delay=0.25)
-#time.sleep(0.5)
-# walk(180, 30, 2, delay=0.25)
-# time.sleep(0.5)
-# walk(90, 30, 2, delay=0.25)
-# time.sleep(0.5)
-# walk(-90, 30, 2, delay=0.25)
-# time.sleep(0.5)
-
-
-#assert False
-
-def crab_walk_turn(dist=30, steps=1, delay=0.35):
+def crab_walk_turn(dist=30, steps=1, delay=0.3):
 
     turn_legs=(0,1,2,3,4,5)
     legs_left = (3,4,5)
@@ -706,7 +646,9 @@ def crab_walk_turn(dist=30, steps=1, delay=0.35):
 
 
 
-def crab_walk_2(dir=0, dist=30, steps=1, delay=0.35):
+def crab_walk_2(dir=0, dist=30, steps=1, delay=0.3):
+
+    #FIXME: Sideways needs different leg directions compared with fw/back
 
     if (dir == 0) or (dir == 180):
         print("f/b")
@@ -717,8 +659,9 @@ def crab_walk_2(dir=0, dist=30, steps=1, delay=0.35):
         turn_legs_L = (0,2,4)
         turn_legs_R = (1,5,3)
         
+    if (dir == 0) and (dist < 0):  #FIXME: why does backwards step back so big???
+        dist = dist/2
     
-    angle = -dist
 
     for step in range(steps):
 
@@ -764,7 +707,7 @@ def crab_walk_2(dir=0, dist=30, steps=1, delay=0.35):
 
 
 
-def start_ps4_ctrl(delay):
+def start_ps4_ctrl():
 
     ###### PS4 Remote Control ######
 
@@ -807,32 +750,24 @@ def start_ps4_ctrl(delay):
         if not muscle_up and abs(right_stick_x_axis) > deadzone:
             print("turning")
             direction = right_stick_x_axis/abs(right_stick_x_axis)
-            #legs_turn_relative(all_legs, 20*direction, True) #45*right_stick_x_axis, rel_zero=True)
-            crab_walk_turn(20*direction)
-            #time.sleep(delay)
-            #legs_step_relative(all_legs, 0, 0, 0, rel_zero = True)
+            crab_walk_turn(30*direction)
             turning = True
-            time.sleep(delay)
         elif turning and abs(right_stick_y_axis) <= deadzone:
-            #crab_walk_turn(0)
-            #legs_turn_relative(all_legs, 0, rel_zero=True)
-            #time.sleep(delay)
             turning = False
+
 
         # Muscle-up
         if not turning and abs(right_stick_y_axis) > deadzone:
             #print("muscle_up", right_stick_y_axis)
-            #legs_move_relative(all_legs, 0, 0, -50*right_stick_y_axis, rel_zero=True)
             legs_lift(all_legs, -30*right_stick_y_axis)
             muscle_up = True
-            time.sleep(delay)
+            #time.sleep(delay)
         elif muscle_up and abs(right_stick_y_axis) <= deadzone:
             legs_lift(all_legs, 0)
             muscle_up = False
         
 
         # Walking
-
         if not muscle_up and not turning and abs(left_stick_y_axis) > deadzone:
             print("walking fwd/back")
             if left_stick_y_axis > 0:
@@ -841,7 +776,6 @@ def start_ps4_ctrl(delay):
                 crab_walk_2(0, -30, 1)
             
             walking = True
-            time.sleep(delay)
         elif not muscle_up and not turning and abs(left_stick_x_axis) > deadzone:
             print("walking left/right")
             if left_stick_x_axis > 0:
@@ -854,7 +788,7 @@ def start_ps4_ctrl(delay):
             walking = False
 
 
-start_ps4_ctrl(delay)
+start_ps4_ctrl()
 
 
 
