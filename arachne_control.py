@@ -44,29 +44,29 @@ m_limits = [
     
     [608, 1920, 1, 831.25, 90, 1773.5, 999],  # min, max, direction, nominal [0 degrees], setting [calibrated], calibrated angle. slope [calc'd later]
     [544, 1152, -1, 863, 45, 54, 999],  # 1
-    [1248, 1840, -1, 1380, -45, 1840, 999],  # 2
+    [1248, 1840, -1, 1492, -45, 1840, 999],  # 2
     
     [64, 1136, -1, 1040, 38, 646.25, 999],  # 3
     [608, 1328, -1, 1020, 45, 608.0, 999],  # 4
     [1568, 2128, 1, 1901.25, 45, 2073, 999 ],  # 5
 
     [800, 2096, 1, 1250.0, 90, 1976.25, 999],  # 6
-    [608, 1344, -1, 1060, 45, 608.0, 999],  # 7
-    [736, 1632, -1, 1320, 45, 736, 999], # 8
+    [608, 1344, -1, 1019, 45, 608.0, 999],  # 7
+    [736, 1632, -1, 1270, 45, 736, 999], # 8
     
     # Left Side
     
     [704, 1904, -1, 1468.25, 90, 832.0, 999],  #  9
-    [1248, 1968, 1, 1529, 45, 1968, 999],   # 10
-    [1248, 2080, 1, 1470.00, 45, 2031, 999 ],   # 11
+    [1248, 1968, 1, 1580, 45, 1968, 999],   # 10
+    [1248, 2080, 1, 1550.00, 45, 2031, 999 ],   # 11
     
     [608, 1760, -1, 1615, 90, 784.0, 999], #12
-    [1328, 2000, 1, 1664, 45, 2000, 999],  #13
+    [1328, 2000, 1, 1556, 45, 2000, 999],  #13
     [1008, 1824, 1, 1556.75, 45, 1790, 999], #14
     
     [608, 1904, -1, 1734.0, 90, 803.0, 999], #15
-    [1232, 1952, 1, 1593.0, 45, 1952, 999], #16
-    [848, 1312, 1, 1296, -45, 848, 999], #17
+    [1232, 1952, 1, 1504.0, 45, 1952, 999], #16
+    [848, 1312, 1, 1156, -45, 848, 999], #17
     ]
 
 
@@ -669,14 +669,19 @@ def walk(direction=0, step_size=30, num_steps=1, delay=0.2):
         time.sleep(delay)
 
 # TEST WALKING in each direction
-# walk(0, 30, 2, delay=0.25)
-# time.sleep(0.5)
+#walk(0, 15, 3, delay=0.25)
+#time.sleep(0.5)
 # walk(180, 30, 2, delay=0.25)
 # time.sleep(0.5)
 # walk(90, 30, 2, delay=0.25)
 # time.sleep(0.5)
 # walk(-90, 30, 2, delay=0.25)
 # time.sleep(0.5)
+
+
+#assert False
+
+
 
 def start_ps4_ctrl():
 
@@ -819,12 +824,57 @@ def crab_walk(steps = 1):
         crab_walk_half("R", last=False)
         crab_walk_half("L", last=True)
 
-crab_walk(3)
+#crab_walk(3)
 
+def crab_walk_2(dist=30, steps=1, delay=0.35):
 
-
-
+    turn_legs_L = (5,3, 1)
+    turn_legs_R = (0,2, 4)
     
+    angle = -dist
+
+#set_rel_zero_position()
+
+    for step in range(steps):
+
+        # R
+        legs_lift(turn_legs_L, 30)
+        time.sleep(delay)
+        legs_turn(turn_legs_R, -dist)
+        time.sleep(delay)
+        legs_lift(turn_legs_L, 0)
+        time.sleep(delay)
+
+        legs_lift(turn_legs_R, 30)
+        time.sleep(delay)
+        legs_turn(turn_legs_R, 0)
+        time.sleep(delay)
+        
+
+        # L
+        #legs_lift(other_legs_L, 30)
+        #time.sleep(delay)
+        legs_turn(turn_legs_L, -dist)
+        time.sleep(delay)
+        legs_lift(turn_legs_R, 0)
+        time.sleep(delay)
+
+        legs_lift(turn_legs_L, 30)
+        time.sleep(delay)
+        legs_turn(turn_legs_L, 0)
+        time.sleep(delay)
+        
+
+        if step == (steps -1):
+            legs_lift(turn_legs_L, 0)
+            time.sleep(delay)
+        
+        #legs_step_relative(turn_legs, 0, 0, 0, 30, False)
+        #time.sleep(delay)
+
+
+
+crab_walk_2(dist=40, steps=10)
 
 
 
