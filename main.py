@@ -10,3 +10,4 @@ if __name__ == "__main__":
 # - Implementing a vision system w a camera or ultrasonic sensor to prevent arachne from bumping into people and objects
 #           - Autonomous pathfinding where Arachne can detect places it can move to and walk around, demoing itself. Similar to how phyz will look at people when idle and move his head around, arachne could move around within a set space and slightly branch out based off what space is deemed "available"
 # - IMU to measure how off balance arachne is and to keep him upright and prevent tipping
+

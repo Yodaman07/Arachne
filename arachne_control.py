@@ -167,7 +167,6 @@ class ArachneController:
         self.reset_all_joints()
         time.sleep(1.0)
         self.get_all_joints_pos()
-        self.set_rel_zero_position()
         time.sleep(1)
 
     ##### Config Functions ##########
@@ -178,14 +177,14 @@ class ArachneController:
         # pass  #FIXME: not sure if this will work
 
     def get_all_joints_pos(self, sleep_time=0.05):
-        global CURR_SERVO_POS, AVE_SERVO_POS
-        AVE_SERVO_POS = CURR_SERVO_POS.copy()  # FIXME: will this work?
+
+        self.AVE_SERVO_POS = self.CURR_SERVO_POS.copy()  # FIXME: will this work?
         time.sleep(sleep_time)
         for servo_num in range(len(self.m_limits)):
             curr_pos = self.servo.getPosition(servo_num)
             # ave_pos = (AVE_SERVO_POS[servo_num]*ave_count + curr_pos)/(ave_count+1)
             # print("curr_pos", curr_pos)
-            CURR_SERVO_POS[servo_num] = curr_pos
+            self.CURR_SERVO_POS[servo_num] = curr_pos
             # AVE_SERVO_POS[servo_num] = ave_pos
 
     def setServoLimits(self):
@@ -211,11 +210,6 @@ class ArachneController:
             joint_nom = int(self.m_limits[servo_num][3] * self.MLS)
             self.servo.setTarget(servo_num, joint_nom)
 
-    def set_rel_zero_position(self): # ?????
-        global pos_rel_zero
-        for servo_num in range(len(self.m_limits)):
-            curr_pos = self.servo.getPosition(servo_num)
-            self.rel_zero_pos[servo_num] = curr_pos
 
     # MAIN METHOD
     def start_ps4_ctrl(self):
