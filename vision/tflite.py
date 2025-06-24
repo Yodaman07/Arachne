@@ -6,7 +6,7 @@ import time
 # File courtesy of mesisng around with chatgpt
 
 # Paths
-MODEL_PATH = "vision/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29/detect.tflite"  # e.g. efficientdet_lite0.tflite
+MODEL_PATH = "vision/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29/detect.tflite"  # e.g. efficientdet.tflite
 LABEL_PATH = "vision/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29/labelmap.txt"  # e.g. coco_labels.txt
 
 # Load labels
