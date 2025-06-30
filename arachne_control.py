@@ -20,6 +20,9 @@
 # FIXME: the new motor is 995 instead of 996.  Doesn't move smoothly.  But only in Joystick mode???
 
 import pygame
+from pygame.joystick import JoystickType
+from vision.vision import Vision
+
 import maestro_extended
 import time
 import numpy as np
@@ -36,6 +39,10 @@ class ArachneController:
         self.j = pygame.joystick.Joystick(0)  # Assume we only have 1
         self.clock = pygame.time.Clock()
         self.j.init()
+        if self.j.get_init():
+            print("Joystick Ready!")
+        self.autonomous = False  #teleop mode for default
+        self.vision = Vision()
 
         # Initializing all leg ids
         self.all_legs = (2, 3, 4, 5, 1, 0)
@@ -234,11 +241,17 @@ class ArachneController:
                 elif event.type == pygame.JOYBUTTONUP:
                     print(event.dict, event.joy, self.ps4_button[event.button], 'released')
                     # time.sleep(0.5)
-
             left_stick_x_axis = self.j.get_axis(0)
             left_stick_y_axis = -self.j.get_axis(1)
             right_stick_x_axis = self.j.get_axis(3)
             right_stick_y_axis = -self.j.get_axis(4)
+
+            for check in range(1, 12):  # From online, can use to help find the corresponding buttons on the controller
+                print("BUTTON" + str(check) + " > " + str(self.j.get_button(check)))
+
+            exit = self.j.get_button(0) # To be assigned
+            autonomous = self.j.get_button(0)
+
             arm_left_axis = (self.j.get_axis(2) + 1) / 2  # change (-1,1) to (0,1)
             arm_right_axis = (self.j.get_axis(5) + 1) / 2
 
@@ -250,43 +263,57 @@ class ArachneController:
             thresh1 = 0.9
             thresh2 = 0.99
 
-            # Turning
-            if not muscle_up and abs(right_stick_x_axis) > deadzone:
-                print("turning")
-                direction = right_stick_x_axis / abs(right_stick_x_axis)
-                self.crab_walk_turn(30 * direction)
-                turning = True
-            elif turning and abs(right_stick_y_axis) <= deadzone:
-                turning = False
 
-            # Muscle-up
-            if not turning and abs(right_stick_y_axis) > deadzone:
-                # print("muscle_up", right_stick_y_axis)
-                self.legs_lift(self.all_legs, -30 * right_stick_y_axis)
-                muscle_up = True
-                # time.sleep(delay)
-            elif muscle_up and abs(right_stick_y_axis) <= deadzone:
-                self.legs_lift(self.all_legs, 0)
-                muscle_up = False
+            # Buttons to always listen for
+            if exit:
+                print("Exiting")
+                break
+            elif autonomous:
+                self.autonomous = not self.autonomous
+                print(f"Toggling Autonomous status is now {self.autonomous}")
 
-            # Walking
-            if not muscle_up and not turning and abs(left_stick_y_axis) > deadzone:
-                print("walking fwd/back")
-                if left_stick_y_axis > 0:
-                    self.crab_walk_2(0, 30, 1)
-                else:
-                    self.crab_walk_2(0, -30, 1)
+            if not self.autonomous:
+                # Turning
+                if not muscle_up and abs(right_stick_x_axis) > deadzone:
+                    print("turning")
+                    direction = right_stick_x_axis / abs(right_stick_x_axis)
+                    self.crab_walk_turn(30 * direction)
+                    turning = True
+                elif turning and abs(right_stick_y_axis) <= deadzone:
+                    turning = False
 
-                walking = True
-            elif not muscle_up and not turning and abs(left_stick_x_axis) > deadzone:
-                print("walking left/right")
-                if left_stick_x_axis > 0:
-                    self.crab_walk_2(90, 30, 1)
-                else:
-                    self.crab_walk_2(90, 30, 1)
-                walking = True
-            elif walking and (abs(left_stick_y_axis) <= deadzone) and (abs(left_stick_x_axis) <= deadzone):
-                walking = False
+                # Muscle-up
+                if not turning and abs(right_stick_y_axis) > deadzone:
+                    # print("muscle_up", right_stick_y_axis)
+                    self.legs_lift(self.all_legs, -30 * right_stick_y_axis)
+                    muscle_up = True
+                    # time.sleep(delay)
+                elif muscle_up and abs(right_stick_y_axis) <= deadzone:
+                    self.legs_lift(self.all_legs, 0)
+                    muscle_up = False
+
+                # Walking
+                if not muscle_up and not turning and abs(left_stick_y_axis) > deadzone:
+                    print("walking fwd/back")
+                    if left_stick_y_axis > 0:
+                        self.crab_walk_2(0, 30, 1)
+                    else:
+                        self.crab_walk_2(0, -30, 1)
+
+                    walking = True
+                elif not muscle_up and not turning and abs(left_stick_x_axis) > deadzone:
+                    print("walking left/right")
+                    if left_stick_x_axis > 0:
+                        self.crab_walk_2(90, 30, 1)
+                    else:
+                        self.crab_walk_2(90, 30, 1)
+                    walking = True
+                elif walking and (abs(left_stick_y_axis) <= deadzone) and (abs(left_stick_x_axis) <= deadzone):
+                    walking = False
+
+            else: # autonomous activated
+                self.vision.run(self.j, self)
+
 
         # Cleanup
         self.servo.close()
