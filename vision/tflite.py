@@ -3,11 +3,11 @@ import numpy as np
 from ai_edge_litert.interpreter import Interpreter
 import time
 
-# File courtesy of mesisng around with chatgpt
+# File courtesy of messing around with chatgpt
 
 # Paths
-MODEL_PATH = "vision/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29/detect.tflite"  # e.g. efficientdet.tflite
-LABEL_PATH = "vision/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29/labelmap.txt"  # e.g. coco_labels.txt
+MODEL_PATH = "vision/model/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29.tflite"
+LABEL_PATH = "vision/model/labelmap.txt"  # COCO Dataset
 
 # Load labels
 with open(LABEL_PATH, 'r') as f:
@@ -71,12 +71,12 @@ while True:
             cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
             cv2.putText(frame, f"{label} ({confidence}%)", (xmin, ymin - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            # Show output
 
-    # Show output
 
     new_frame_time = time.time()
     fps = 1 / (new_frame_time - prev_frame_time)
-    prev_frame_time = new_frame_time
+    prev_frame_time = new_frame_time # Get fps
 
     # Display FPS on the frame (optional)
     cv2.putText(frame, f"FPS: {fps}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
