@@ -217,7 +217,6 @@ class ArachneController:
             joint_nom = int(self.m_limits[servo_num][3] * self.MLS)
             self.servo.setTarget(servo_num, joint_nom)
 
-
     # MAIN METHOD
     def start_ps4_ctrl(self):
         ###### PS4 Remote Control ######
@@ -249,7 +248,7 @@ class ArachneController:
             for check in range(1, 12):  # From online, can use to help find the corresponding buttons on the controller
                 print("BUTTON" + str(check) + " > " + str(self.j.get_button(check)))
 
-            exit = self.j.get_button(0) # To be assigned
+            exit = self.j.get_button(0)  # To be assigned
             autonomous = self.j.get_button(0)
 
             arm_left_axis = (self.j.get_axis(2) + 1) / 2  # change (-1,1) to (0,1)
@@ -262,7 +261,6 @@ class ArachneController:
             deadzone = 0.25
             thresh1 = 0.9
             thresh2 = 0.99
-
 
             # Buttons to always listen for
             if exit:
@@ -311,9 +309,8 @@ class ArachneController:
                 elif walking and (abs(left_stick_y_axis) <= deadzone) and (abs(left_stick_x_axis) <= deadzone):
                     walking = False
 
-            else: # autonomous activated
-                self.vision.run(self.j, self)
-
+            else:  # autonomous activated
+                self.vision.tick(self.j, self)
 
         # Cleanup
         self.servo.close()
@@ -338,9 +335,11 @@ class ArachneController:
 
         target = int(joint_nom + angle * angle_scale)  # joint_dir*angle*SERVO_SCALE)
 
-        if self.debug: print("leg, joint, angle, joint_dir, joint_nom, target:", leg, joint, angle, joint_dir, joint_nom,
-                        target)
-        if self.debug: print("   limits: ", self.m_limits[servo_num][0] * self.MLS, self.m_limits[servo_num][1] * self.MLS)
+        if self.debug: print("leg, joint, angle, joint_dir, joint_nom, target:", leg, joint, angle, joint_dir,
+                             joint_nom,
+                             target)
+        if self.debug: print("   limits: ", self.m_limits[servo_num][0] * self.MLS,
+                             self.m_limits[servo_num][1] * self.MLS)
         if not wait_till_execute:
             self.servo.setTarget(servo_num, target)
         else:

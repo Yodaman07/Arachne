@@ -34,17 +34,13 @@ class Vision:
         self.new_frame_time = 0
         self.prev_frame_time = 0
 
-    def run(self, joystick: JoystickType, arachne_control: ArachneController):
+        self.cap = cv.VideoCapture(0)
 
-        # Start webcam
-        cap = cv.VideoCapture(0)
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            if joystick.get_button(0): # check number
-                break
+    def tick(self, joystick: JoystickType, arachne_control: ArachneController): # 1 frame
+            center = (0,0)
+            ret, frame = self.cap.read()
+            # if not ret:
+            #     break
 
             # Preprocess
             image_rgb = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
@@ -81,7 +77,6 @@ class Vision:
 
                     center = (xmin + int(abs(xmin - xmax) / 2), ymin + int(abs(ymax - ymin) / 2))
                     cv.rectangle(frame, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
-                    cv.line(frame, center, center, (0, 0, 0), 20)
                     cv.putText(frame, f"{label} ({confidence}%)", (xmin, ymin - 10),
                                cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                     # Show output
@@ -95,14 +90,23 @@ class Vision:
             cv.imshow("Object Detection", frame)
 
             if num <= 0: # scanning
-                arachne_control.crab_walk_turn(30)# keep turning until you detect something
+                arachne_control.crab_walk_turn(30) # keep turning until you detect something
             else: # start walking forward
+                cv.line(frame, center, center, (0, 0, 0), 20) # if you start walking forward, put a dot on the center of the detected object
+                # fine adjustment
+                actual_w = cv.CAP_PROP_FRAME_WIDTH/2
+                if 0 <= (center[0]-actual_w) <= 10:
+                    arachne_control.crab_walk_turn(30) # move left
+                elif 0<= (actual_w - center[0]) <= 10:
+                    arachne_control.crab_walk_turn(-30) # move right
+
                 arachne_control.crab_walk_2(0, 30, 1)
 
+            #
+            # if cv.waitKey(1) == ord("q"):  # ESC to quit
+            #     break
 
-            if cv.waitKey(1) == ord("q"):  # ESC to quit
-                break
-
-        cap.release()
-        cv.destroyAllWindows()
+            if joystick.get_button(0): # exit program if the toggle is pressed
+                self.cap.release()
+                cv.destroyAllWindows()
 
