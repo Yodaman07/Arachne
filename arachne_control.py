@@ -229,7 +229,8 @@ class ArachneController:
         muscle_up = False
         # busy = False
 
-        while True:
+        res = True
+        while res:
             self.clock.tick(30)  # Frame Rate = 30fps
 
             events = pygame.event.get()
@@ -307,7 +308,7 @@ class ArachneController:
                     walking = False
 
             else:  # autonomous activated
-                self.vision.tick(self.j, self)
+                res = self.vision.tick()
 
         # Cleanup
 
@@ -444,9 +445,9 @@ class Vision:
 
         retrieved, frame = self.cap.read()
 
-        # if not retrieved:
-        #     print("Stream has likely ended")
-        #     break
+        if not retrieved:
+            print("Stream has likely ended")
+            return False
 
         cv.imshow("stream", frame)
         # https://stackoverflow.com/questions/5217519/what-does-opencvs-cvwaitkey-function-do <-- how waitKey works
