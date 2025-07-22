@@ -42,7 +42,7 @@ class ArachneController:
         self.j.init()
         if self.j.get_init():
             print("Joystick Ready!")
-        self.autonomous = True  # teleop mode for default
+        self.autonomous = False  # teleop mode for default
         self.vision = Vision(self)
 
         # Initializing all leg ids
@@ -486,9 +486,9 @@ class Vision:
                 confidence = int(scores[i] * 100)
 
                 center = (xmin + int(abs(xmin - xmax) / 2), ymin + int(abs(ymax - ymin) / 2))
-                cv.rectangle(frame, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
-                cv.putText(frame, f"{label} ({confidence}%)", (xmin, ymin - 10),
-                           cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                #cv.rectangle(frame, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
+                #cv.putText(frame, f"{label} ({confidence}%)", (xmin, ymin - 10),
+                           # cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 # Show output
 
         self.new_frame_time = time.time()
@@ -499,6 +499,7 @@ class Vision:
         # cv.putText(frame, f"FPS: {fps}", (10, 30), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         # cv.imshow("Object Detection", frame)
 
+        print(num)
         if num <= 0:  # scanning
             self.ac.crab_walk_turn(10)  # keep turning until you detect something
         # # else: # start walking forward
