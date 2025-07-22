@@ -1,9 +1,15 @@
-from arachne_control import ArachneController, Vision
+# from arachne_control import ArachneController, Vision
 import cv2 as cv
 
+from vision.vision import CompactVision
+
 if __name__ == "__main__":
-    controller = ArachneController(debug=False)
-    controller.start_ps4_ctrl()  # could consider a different method of control?
+    v = CompactVision()
+    while True:
+        v.tick()
+
+    # controller = ArachneController(debug=False)
+    # controller.start_ps4_ctrl()  # could consider a different method of control?
 
 # Brainstorming possible project goals:
 # - Developing a new method of control allowing for individual limb control like with an arcade button controller setup
