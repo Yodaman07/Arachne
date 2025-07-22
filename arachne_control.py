@@ -474,8 +474,10 @@ class Vision:
 
         # Draw detections
         imH, imW, _ = frame.shape
+        detected = False
         for i in range(int(num)):
             if scores[i] > 0.5:
+                detected = True
                 ymin = int(max(1, boxes[i][0] * imH))
                 xmin = int(max(1, boxes[i][1] * imW))
                 ymax = int(min(imH, boxes[i][2] * imH))
@@ -500,7 +502,7 @@ class Vision:
         # cv.imshow("Object Detection", frame)
 
         print(num)
-        if num <= 0:  # scanning
+        if not detected:  # scanning
             self.ac.crab_walk_turn(10)  # keep turning until you detect something
         # # else: # start walking forward
         # #     cv.line(frame, center, center, (0, 0, 0), 20) # if you start walking forward, put a dot on the center of the detected object
