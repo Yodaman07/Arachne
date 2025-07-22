@@ -43,7 +43,7 @@ class ArachneController:
         if self.j.get_init():
             print("Joystick Ready!")
         self.autonomous = True  # teleop mode for default
-        self.vision = Vision()
+        self.vision = Vision(self)
 
         # Initializing all leg ids
         self.all_legs = (2, 3, 4, 5, 1, 0)
@@ -416,7 +416,8 @@ class ArachneController:
 
 # File courtesy of messing around with chatgpt
 class Vision:
-    def __init__(self):
+    def __init__(self, ac: ArachneController):
+        self.ac = ac
         # Paths
         self.MODEL_PATH = "vision/model/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29.tflite"
         self.LABEL_PATH = "vision/model/labelmap.txt"  # COCO Dataset
@@ -449,7 +450,7 @@ class Vision:
             print("Stream has likely ended")
             return False
 
-        cv.imshow("stream", frame)
+        # cv.imshow("stream", frame)
         # https://stackoverflow.com/questions/5217519/what-does-opencvs-cvwaitkey-function-do <-- how waitKey works
 
         image_rgb = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
@@ -495,11 +496,11 @@ class Vision:
         self.prev_frame_time = self.new_frame_time  # Get fps
 
         # Display FPS on the frame (optional)
-        cv.putText(frame, f"FPS: {fps}", (10, 30), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        cv.imshow("Object Detection", frame)
+        # cv.putText(frame, f"FPS: {fps}", (10, 30), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        # cv.imshow("Object Detection", frame)
 
-        # # if num <= 0: # scanning
-        # #     arachne_control.crab_walk_turn(30) # keep turning until you detect something
+        if num <= 0:  # scanning
+            self.ac.crab_walk_turn(10)  # keep turning until you detect something
         # # else: # start walking forward
         # #     cv.line(frame, center, center, (0, 0, 0), 20) # if you start walking forward, put a dot on the center of the detected object
         # #     # fine adjustment
@@ -511,7 +512,6 @@ class Vision:
 
         # #     arachne_control.crab_walk_2(0, 30, 1)
 
-        # #
         if cv.waitKey(1) == ord("q"):  # ESC to quit
             return False
 
@@ -520,4 +520,3 @@ class Vision:
         # # if joystick.get_button(1): # exit program if the toggle is pressed
         # #     self.cap.release()
         # #     cv.destroyAllWindows()
-

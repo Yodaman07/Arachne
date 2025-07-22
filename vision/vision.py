@@ -39,7 +39,7 @@ class CompactVision:
             print("Stream has likely ended")
             return False
 
-        cv.imshow("stream", frame)
+        #cv.imshow("stream", frame)
         # https://stackoverflow.com/questions/5217519/what-does-opencvs-cvwaitkey-function-do <-- how waitKey works
 
         image_rgb = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
