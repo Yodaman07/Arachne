@@ -29,19 +29,9 @@ class CompactVision:
 
         self.new_frame_time = 0
         self.prev_frame_time = 0
-        self.cap = cv.VideoCapture(0)
+        # self.cap = cv.VideoCapture(0)
 
-    def tick(self) -> bool:  # 1 frame
-
-        retrieved, frame = self.cap.read()
-
-        if not retrieved:
-            print("Stream has likely ended")
-            return False
-
-        #cv.imshow("stream", frame)
-        # https://stackoverflow.com/questions/5217519/what-does-opencvs-cvwaitkey-function-do <-- how waitKey works
-
+    def process_frame(self, frame) -> np.ndarray:
         image_rgb = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
         image_resized = cv.resize(image_rgb, (self.width, self.height))
         input_data = np.expand_dims(image_resized, axis=0)
@@ -81,20 +71,29 @@ class CompactVision:
                            cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 # Show output
 
-
         self.new_frame_time = time.time()
         fps = 1 / (self.new_frame_time - self.prev_frame_time)
         self.prev_frame_time = self.new_frame_time  # Get fps
 
         # Display FPS on the frame (optional)
-        # cv.putText(frame, f"FPS: {fps}", (10, 30), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        # cv.imshow("Object Detection", frame)
+        cv.putText(frame, f"FPS: {fps}", (10, 30), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
+        return frame
 
-        # if cv.waitKey(1) == ord("q"):  # ESC to quit
-        #     return False
-        #
-        # return True
+    def tick(self, cap) -> bool:  # 1 frame
+
+        retrieved, frame = cap.read()
+
+        if not retrieved:
+            print("Stream has likely ended")
+            return False
+
+        cv.imshow("Object Detection", self.process_frame(frame))
+
+        if cv.waitKey(1) == ord("q"):  # ESC to quit
+            return False
+
+        return True
 
         # # if joystick.get_button(1): # exit program if the toggle is pressed
         # #     self.cap.release()

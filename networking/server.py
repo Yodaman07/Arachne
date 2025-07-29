@@ -2,6 +2,12 @@ import socket
 import cv2 as cv
 import numpy as np
 import struct
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) #ai help
+from vision.vision import CompactVision
+
 
 
 # chatgpt help
@@ -26,21 +32,23 @@ def receive_image(conn):
     return img
 
 
-ip = "127.0.0.1"
+ip = "0.0.0.0" # allows connections from anywhere (127.0.0.1 would only be local connections)
 port = 5001
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind((ip, port))
     s.listen()
     connection, addr = s.accept()
+    c = CompactVision()
 
     print(f"Connected by {addr}")
     while True:
         img = receive_image(connection)
+
         if img is None:
             break
         else:
-            cv.imshow("Stream", img)
+            cv.imshow("Stream", c.process_frame(img))
             if cv.waitKey(1) == ord("q"):  # gets the unicode value for q
                 cv.destroyAllWindows()
                 break

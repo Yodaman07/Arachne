@@ -3,7 +3,7 @@ import struct
 
 import cv2 as cv
 # https://github.com/deirvlon/Python-TCP-Image/tree/master
-ip = "127.0.0.1"
+ip = "127.0.0.1" # replace with computers local ip
 port = 5001
 
 #chatgpt help
