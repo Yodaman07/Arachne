@@ -10,11 +10,12 @@ if not cam.isOpened():
 
 while True:
     retrieved, frame = cam.read()
+    # https://stackoverflow.com/questions/19062875/how-to-get-the-number-of-channels-from-an-image-in-opencv-2
 
     if not retrieved:
         print("Stream has likely ended")
         break
-
+    print(frame.shape)
 
     cv.imshow("stream", frame)
     # https://stackoverflow.com/questions/5217519/what-does-opencvs-cvwaitkey-function-do <-- how waitKey works
