@@ -1,3 +1,5 @@
+from typing import Any
+
 import cv2 as cv
 import numpy as np
 from ai_edge_litert.interpreter import Interpreter
@@ -31,7 +33,7 @@ class CompactVision:
         self.prev_frame_time = 0
         # self.cap = cv.VideoCapture(0)
 
-    def process_frame(self, frame) -> np.ndarray:
+    def process_frame(self, frame) -> list[Any]: # 3 tuples bottom left and top right corner, and center
         image_rgb = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
         image_resized = cv.resize(image_rgb, (self.width, self.height))
         input_data = np.expand_dims(image_resized, axis=0)
@@ -51,6 +53,7 @@ class CompactVision:
         scores = self.interpreter.get_tensor(self.output_details[2]['index'])[0]
         num = self.interpreter.get_tensor(self.output_details[3]['index'])[0]
 
+        result = []
         # Draw detections
         imH, imW, _ = frame.shape
         for i in range(int(num)):
@@ -69,6 +72,7 @@ class CompactVision:
                 cv.rectangle(frame, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
                 cv.putText(frame, f"{label} ({confidence}%)", (xmin, ymin - 10),
                            cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                result.append([(xmin, ymin), (xmax,ymax), center]) # one of these per object detected per frame
                 # Show output
 
         self.new_frame_time = time.time()
@@ -77,8 +81,9 @@ class CompactVision:
 
         # Display FPS on the frame (optional)
         cv.putText(frame, f"FPS: {fps}", (10, 30), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        cv.imshow("Server", frame)
 
-        return frame
+        return result
 
     def tick(self, cap) -> bool:  # 1 frame
 
@@ -88,7 +93,8 @@ class CompactVision:
             print("Stream has likely ended")
             return False
 
-        cv.imshow("Object Detection", self.process_frame(frame))
+        self.process_frame(frame)
+        # cv.imshow("Object Detection", )
 
         if cv.waitKey(1) == ord("q"):  # ESC to quit
             return False

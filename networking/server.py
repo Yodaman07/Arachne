@@ -5,9 +5,8 @@ import struct
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) #ai help
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  #ai help
 from vision.vision import CompactVision
-
 
 
 # chatgpt help
@@ -32,7 +31,7 @@ def receive_image(conn):
     return img
 
 
-ip = "0.0.0.0" # allows connections from anywhere (127.0.0.1 would only be local connections)
+ip = "0.0.0.0"  # allows connections from anywhere (127.0.0.1 would only be local connections)
 port = 5001
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -48,7 +47,17 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         if img is None:
             break
         else:
-            cv.imshow("Stream", c.process_frame(img))
+            result = c.process_frame(img)
+
+            toSend = ""
+
+            try:
+                toSend += ("" + str(result[0][2][0]) + "," + str(result[0][2][1]))
+            except IndexError:
+                toSend += "NA"
+
+            connection.sendall(toSend.encode())
+
             if cv.waitKey(1) == ord("q"):  # gets the unicode value for q
                 cv.destroyAllWindows()
                 break
