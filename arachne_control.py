@@ -43,7 +43,7 @@ class ArachneController:
         if self.j.get_init():
             print("Joystick Ready!")
         self.autonomous = False  # teleop mode for default
-        self.vision = Vision(self)
+        # self.vision = Vision(self)
 
         # Initializing all leg ids
         self.all_legs = (2, 3, 4, 5, 1, 0)

@@ -45,12 +45,11 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         img = receive_image(connection)
 
         if img is None:
+            print("Issue with image")
             break
         else:
             result = c.process_frame(img)
-
             toSend = ""
-
             try:
                 toSend += ("" + str(result[0][2][0]) + "," + str(result[0][2][1]))
             except IndexError:
