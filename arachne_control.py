@@ -20,13 +20,14 @@
 # FIXME: the new motor is 995 instead of 996.  Doesn't move smoothly.  But only in Joystick mode???
 
 import pygame
-from pygame.joystick import JoystickType
 from ai_edge_litert.interpreter import Interpreter
 import cv2 as cv
+import threading
 
 import maestro_extended
 import time
 import numpy as np
+import networking.client as Client
 
 
 class ArachneController:
@@ -219,7 +220,7 @@ class ArachneController:
             self.servo.setTarget(servo_num, joint_nom)
 
     # MAIN METHOD
-    def start_ps4_ctrl(self):
+    def start_ps4_ctrl(self, socket):
         ###### PS4 Remote Control ######
         # consider using a dedicated library for ps4 controlling with pyPS4Controller
         # pip install pyPS4Controller
@@ -229,8 +230,11 @@ class ArachneController:
         muscle_up = False
         # busy = False
 
-        res = True
-        while res:
+        data = {"point": "NA"}
+        autonomousThread = threading.Thread(target=self.controller_mixin, args=data)
+        cap = cv.VideoCapture(0)
+
+        while True:
             self.clock.tick(30)  # Frame Rate = 30fps
 
             events = pygame.event.get()
@@ -242,7 +246,12 @@ class ArachneController:
                 elif event.type == pygame.JOYBUTTONUP:
                     if event.dict['button'] == 2:
                         self.autonomous = not self.autonomous
-                        print(f"Toggling Autonomous status is now {self.autonomous}")
+                        if self.autonomous and not autonomousThread.is_alive():
+                            autonomousThread.start()
+                        else:
+                            autonomousThread.join() #should kill the thread
+                        status = "on" if self.autonomous else "off"
+                        print(f"Toggling Autonomous, status is now {status}")
                     print(event.dict, event.joy, self.ps4_button[event.button], 'released')
                     # time.sleep(0.5)
             left_stick_x_axis = self.j.get_axis(0)
@@ -306,10 +315,8 @@ class ArachneController:
                     walking = True
                 elif walking and (abs(left_stick_y_axis) <= deadzone) and (abs(left_stick_x_axis) <= deadzone):
                     walking = False
-
-            else:  # autonomous activated
-                res = self.vision.tick()
-
+            else:
+                Client.client_tick(cap, socket, data)
         # Cleanup
 
     # Movement Functions
@@ -412,6 +419,18 @@ class ArachneController:
 
             # legs_step_relative(turn_legs, 0, 0, 0, 30, False)
             # time.sleep(delay)
+
+    @staticmethod
+    def controller_mixin(pt):  # points is a String to be parsed
+        controller = ArachneController(debug=False)
+        while True:
+            # print("IN WHILE LOOP")
+            if pt[0] == "NA":  # scanning for an object
+                print("TURN")
+                controller.crab_walk_turn(10)
+            else:
+                print("CRAB WALK")
+                controller.crab_walk_2(0, 30, 1)
 
 
 # File courtesy of messing around with chatgpt

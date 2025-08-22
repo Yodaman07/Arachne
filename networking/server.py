@@ -51,7 +51,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             result = c.process_frame(img)
             toSend = ""
             try:
-                toSend += ("" + str(result[0][2][0]) + "," + str(result[0][2][1]))
+                toSend += ("" + str(result[0][2][0]) + "," + str(result[0][2][1])) # pairing up the x and y coords
             except IndexError:
                 toSend += "NA"
 
