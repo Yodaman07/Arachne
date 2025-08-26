@@ -1,6 +1,7 @@
 # Arachne Control and Walking
 
 # ToDo:
+# * Servo 10 (in Leg 3) needs to be fine-tuned for ranges
 # * Relative and RelZero movements should be wrt an absolute x direction for all legs
 # * Make leg x consistent for both left side and right side
 #   <-- FIXME: for some directions, the leg x orientation needs to change (+x out is not always good).  Maybe x direction should always be consistent?
@@ -17,7 +18,7 @@
 # X wait function is really slow, but the sleeps are not scalable
 # X wait while moving is ot working.  separate thread?
 
-# FIXME: the new motor is 995 instead of 996.  Doesn't move smoothly.  But only in Joystick mode???
+# FIXED: the new motor is 995 instead of 996.  Doesn't move smoothly.  But only in Joystick mode???
 
 import pygame
 from ai_edge_litert.interpreter import Interpreter
@@ -75,7 +76,7 @@ class ArachneController:
             # Left Side
 
             [704, 1904, -1, 1468.25, 90, 832.0, 999],  # 9
-            [1248, 1968, 1, 1580, 45, 1968, 999],  # 10
+            [526, 1034, 1, 868, 45, 1968, 999],  # 10. #FIXME: replaced Servo, needs new Cal
             [1248, 2080, 1, 1450.00, 45, 2031, 999],  # 11   # was x, x, 1550
 
             [608, 1760, -1, 1615, 90, 784.0, 999],  # 12
