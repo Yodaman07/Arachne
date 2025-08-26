@@ -6,7 +6,7 @@ import threading
 from vision.vision import CompactVision
 
 if __name__ == "__main__":
-    ip = "127.0.0.1"  # replace with computers local ip
+    ip = "192.168.68.73"  # replace with computers local ip
     port = 5001
 
     controller = ArachneController(debug=False)
