@@ -28,7 +28,7 @@ import threading
 import maestro_extended
 import time
 import numpy as np
-import networking.client as Client
+# import networking.client as Client
 
 
 class ArachneController:
@@ -284,7 +284,8 @@ class ArachneController:
                 elif walking and (abs(left_stick_y_axis) <= deadzone) and (abs(left_stick_x_axis) <= deadzone):
                     walking = False
             else:
-                Client.client_tick(cap, socket, data)
+                pass
+                # Client.client_tick(cap, socket, data)
         # Cleanup
 
     # Movement Functions
