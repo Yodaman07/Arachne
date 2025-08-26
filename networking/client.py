@@ -5,7 +5,6 @@ import os
 import threading
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  #ai help
-from arachne_control import ArachneController
 
 
 # https://github.com/deirvlon/Python-TCP-Image/tree/master

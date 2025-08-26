@@ -28,7 +28,7 @@ import threading
 import maestro_extended
 import time
 import numpy as np
-# import networking.client as Client
+import networking.client as Client
 
 
 class ArachneController:
@@ -76,7 +76,7 @@ class ArachneController:
             # Left Side
 
             [704, 1904, -1, 1468.25, 90, 832.0, 999],  # 9
-            [1040, 528, 1, 858, 45, 1968, 999],  # 10. #FIXME: replaced Servo, needs new Cal 1040, 528, 858
+            [528, 1040 , -1, 858, 45, 528, 999],  # 10. #FIXME: replaced Servo, needs new Cal 1040, 528, 858
             [1248, 2080, 1, 1450.00, 45, 2031, 999],  # 11   # was x, x, 1550
 
             [608, 1760, -1, 1615, 90, 784.0, 999],  # 12
@@ -284,8 +284,7 @@ class ArachneController:
                 elif walking and (abs(left_stick_y_axis) <= deadzone) and (abs(left_stick_x_axis) <= deadzone):
                     walking = False
             else:
-                pass
-                # Client.client_tick(cap, socket, data)
+                Client.client_tick(cap, socket, data)
         # Cleanup
 
     # Movement Functions
