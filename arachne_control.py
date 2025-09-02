@@ -76,7 +76,7 @@ class ArachneController:
             # Left Side
 
             [704, 1904, -1, 1468.25, 90, 832.0, 999],  # 9
-            [528, 1040 , -1, 858, 45, 528, 999],  # 10. #FIXME: replaced Servo, needs new Cal 1040, 528, 858
+            [528, 1040, -1, 858, 45, 528, 999],  # 10. #FIXME: replaced Servo, needs new Cal 1040, 528, 858
             [1248, 2080, 1, 1450.00, 45, 2031, 999],  # 11   # was x, x, 1550
 
             [608, 1760, -1, 1615, 90, 784.0, 999],  # 12
@@ -217,7 +217,8 @@ class ArachneController:
                         if self.autonomous and not autonomousThread.is_alive():
                             autonomousThread.start()
                         else:
-                            autonomousThread.join() #should kill the thread
+                            data = {"point": "BREAK"} # end autonomous thread
+                            autonomousThread.join()
                         status = "on" if self.autonomous else "off"
                         print(f"Toggling Autonomous, status is now {status}")
                     print(event.dict, event.joy, self.ps4_button[event.button], 'released')
@@ -391,7 +392,7 @@ class ArachneController:
     @staticmethod
     def controller_mixin(pt):  # points is a String to be parsed
         controller = ArachneController(debug=False)
-        while True:
+        while pt[0] != "BREAK":
             # print("IN WHILE LOOP")
             if pt[0] == "NA":  # scanning for an object
                 print("TURN")
@@ -477,7 +478,7 @@ class Vision:
                 center = (xmin + int(abs(xmin - xmax) / 2), ymin + int(abs(ymax - ymin) / 2))
                 #cv.rectangle(frame, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
                 #cv.putText(frame, f"{label} ({confidence}%)", (xmin, ymin - 10),
-                           # cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                # cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 # Show output
 
         self.new_frame_time = time.time()
