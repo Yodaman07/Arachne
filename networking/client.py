@@ -28,7 +28,6 @@ def client_tick(cap, socket, data) -> bool:  # returns if you should break
     if cv.waitKey(1) == ord("q"):  # gets the unicode value for q
         cap.release()
         cv.destroyAllWindows()
-        # movementThread.join()
         return True
 
     return False

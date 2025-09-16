@@ -24,7 +24,7 @@ class YoloVision:
                 cv.circle(frame, (center_x, center_y), 4, (0, 0, 255), -1)
                 cv.putText(frame, f"{name}", (center_x, center_y), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 3)
 
-            return [center_x, center_y]
+            return [center_x, center_y] # only returning the first one found
 
         return ["NA", "NA"]
 

@@ -21,13 +21,11 @@
 # FIXED: the new motor is 995 instead of 996.  Doesn't move smoothly.  But only in Joystick mode???
 
 import pygame
-from ai_edge_litert.interpreter import Interpreter
 import cv2 as cv
 import threading
 
 import maestro_extended
 import time
-import numpy as np
 import networking.client as Client
 
 
@@ -44,7 +42,10 @@ class ArachneController:
         self.j.init()
         if self.j.get_init():
             print("Joystick Ready!")
+
         self.autonomous = False  # teleop mode for default
+        self.pause_event = threading.Event()
+
 
         # Initializing all leg ids
         self.all_legs = (2, 3, 4, 5, 1, 0)
@@ -211,13 +212,13 @@ class ArachneController:
                     print(event.dict, event.joy, self.ps4_button[event.button], 'pressed')
                     # time.sleep(0.5)
                 elif event.type == pygame.JOYBUTTONUP:
-                    if event.dict['button'] == 2:
+                    if event.dict['button'] == 2:  # triangle
                         self.autonomous = not self.autonomous
                         if self.autonomous and not autonomousThread.is_alive():
                             autonomousThread.start()
-                        elif not self.autonomous:
-                            data = {"point": "BREAK"} # end autonomous thread
-                            autonomousThread.join()
+                        elif not self.autonomous: self.pause_event.clear()
+                        elif self.autonomous: self.pause_event.set()
+
                         status = "on" if self.autonomous else "off"
                         print(f"Toggling Autonomous, status is now {status}")
                     print(event.dict, event.joy, self.ps4_button[event.button], 'released')
@@ -388,16 +389,14 @@ class ArachneController:
             # legs_step_relative(turn_legs, 0, 0, 0, 30, False)
             # time.sleep(delay)
 
-    @staticmethod
-    def controller_mixin(pt):  # points is a String to be parsed
-        controller = ArachneController(debug=False)
+    def controller_mixin(self, pt):  # points is a String to be parsed
+        # Pt Key:
+        # Formatted like {"point": ___}, Options are: "NA", "(_,_)" <- actual point
         while True:
-            if pt[0] == "BREAK":
-                break
+            self.pause_event.wait()
             if pt[0] == "NA":  # scanning for an object
                 print("TURN")
-                controller.crab_walk_turn(10)
+                self.crab_walk_turn(10)
             else:
                 print("CRAB WALK")
-                controller.crab_walk_2(0, 30, 1)
-
+                self.crab_walk_2(0, 30, 1)
