@@ -1,9 +1,5 @@
-from arachne_control import ArachneController, Vision
-import cv2 as cv
+from arachne_control import ArachneController
 import socket
-import threading
-
-from vision.vision import CompactVision
 
 if __name__ == "__main__":
     ip = "192.168.68.73"  # replace with computers local ip

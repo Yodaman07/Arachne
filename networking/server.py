@@ -6,7 +6,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  #ai help
-from vision.vision import CompactVision
+from vision.YoloVision import YoloVision
 
 
 # chatgpt help
@@ -38,7 +38,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind((ip, port))
     s.listen()
     connection, addr = s.accept()
-    c = CompactVision()
+    y = YoloVision()
 
     print(f"Connected by {addr}")
     while True:
@@ -48,10 +48,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             print("Issue with image")
             break
         else:
-            result = c.process_frame(img)
+            result = y.process_frame(img)
             toSend = ""
             try:
-                toSend += ("" + str(result[0][2][0]) + "," + str(result[0][2][1])) # pairing up the x and y coords
+                toSend += ("" + str(result[0]) + "," + str(result[1]))  # pairing up the x and y coords
             except IndexError:
                 toSend += "NA"
 
