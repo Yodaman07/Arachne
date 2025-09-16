@@ -20,7 +20,9 @@ while True:
         print("Stream has likely ended")
         break
 
+    frame = cv.resize(frame, (640, 384), interpolation=cv2.INTER_AREA)
     y.process_frame(frame)
+
     cv.imshow("stream", frame)
     if cv.waitKey(1) == ord("q"):  # gets the unicode value for q
         break

@@ -2,7 +2,7 @@ from arachne_control import ArachneController
 import socket
 
 if __name__ == "__main__":
-    ip = "192.168.68.73"  # replace with computers local ip
+    ip = "192.168.68.76"  # replace with computers local ip
     port = 5001
 
     controller = ArachneController(debug=False)

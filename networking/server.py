@@ -49,6 +49,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             break
         else:
             result = y.process_frame(img)
+            cv.imshow("stream", img)
+
             toSend = ""
             try:
                 toSend += ("" + str(result[0]) + "," + str(result[1]))  # pairing up the x and y coords

@@ -1,8 +1,10 @@
 import struct
+
+import cv2
 import cv2 as cv
 import sys
 import os
-import threading
+
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  #ai help
 
@@ -11,6 +13,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  #a
 # chatgpt help for encoding the image
 def client_tick(cap, socket, data) -> bool:  # returns if you should break
     ret, frame = cap.read()
+
+    frame = cv.resize(frame, (640, 384), interpolation=cv2.INTER_AREA)
 
     # Encode frame
     _, img_encoded = cv.imencode('.jpg', frame)  # encodes image as a jpeg which also reduces size

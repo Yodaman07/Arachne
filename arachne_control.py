@@ -203,7 +203,7 @@ class ArachneController:
         cap = cv.VideoCapture(0)
 
         while True:
-            self.clock.tick(30)  # Frame Rate = 30fps
+            self.clock.tick(10)  # Frame Rate = 10fps
 
             events = pygame.event.get()
             for event in events:

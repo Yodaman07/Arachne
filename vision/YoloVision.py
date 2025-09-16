@@ -6,11 +6,12 @@ from ultralytics import YOLO
 
 class YoloVision:
     def __init__(self):
-        self.model = YOLO("vision/yolo11n.pt")
-
+        self.model = YOLO("vision/yolov8n.pt")
+        # look at phyz vision - check for bounding box area (bigger is better) also  average position in a circle around
     def process_frame(self, frame) -> list[Any]:
         global center_x, center_y
         results = self.model(frame, conf=0.5)[0]
+        print(results)
         # print(results) or print(box) for good data
         if len(results.boxes) > 0:  # the result obj will have a box list which distinguishes how many items there are
             for box in results.boxes:
@@ -23,6 +24,7 @@ class YoloVision:
                 cv.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv.circle(frame, (center_x, center_y), 4, (0, 0, 255), -1)
                 cv.putText(frame, f"{name}", (center_x, center_y), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 3)
+
 
             return [center_x, center_y] # only returning the first one found
 
