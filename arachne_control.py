@@ -189,6 +189,7 @@ class ArachneController:
 
     # MAIN METHOD
     def start_ps4_ctrl(self, socket):
+        global data
         ###### PS4 Remote Control ######
         # consider using a dedicated library for ps4 controlling with pyPS4Controller
         # pip install pyPS4Controller
@@ -198,7 +199,7 @@ class ArachneController:
         muscle_up = False
         # busy = False
 
-        data = {"points": []}
+        data = []
         autonomousThread = threading.Thread(target=self.controller_mixin, args=data)
         autonomousThread.start()
         self.pause_event.clear()  # by default start thread and then pause it
@@ -287,7 +288,7 @@ class ArachneController:
                 elif walking and (abs(left_stick_y_axis) <= deadzone) and (abs(left_stick_x_axis) <= deadzone):
                     walking = False
             else:
-                Client.client_tick(cap, socket, data)
+                data = Client.client_tick(cap, socket)
         # Cleanup
 
     # Movement Functions
@@ -391,20 +392,19 @@ class ArachneController:
             # legs_step_relative(turn_legs, 0, 0, 0, 30, False)
             # time.sleep(delay)
 
-    def controller_mixin(self, pt):  # points is a String to be parsed
+    def controller_mixin(self, returned):
         print("Init Thread")
         # Pt Key:
-        # Formatted like {"points": [[x,y],[x,y],[x,y]]}, Options are: "NA", "[_,_]" <- actual point
+        # [[x,y],[x,y],[x,y]] Options are: "NA", "[_,_]" <- actual point
         while True:
             self.pause_event.wait()
-
-            if pt[0] == "NA":  # scanning for an object
+            if returned == "NA":  # scanning for an object
                 print("TURN")
                 self.crab_walk_turn(10)
             else:
-                print(pt[0])  # if multiple points try to walk in between them, only sending one for now though
+                print(returned)  # if multiple points try to walk in between them, only sending one for now though
                 print("CRAB WALK")
-                x, y = pt[0][0][0], pt[0][0][1]
+                x, y = returned[0][0], returned[0][1]
                 if x < (320-20): # width is 640, # turn right
                     self.crab_walk_turn(10)
                 elif x > (320+20):  # turn left

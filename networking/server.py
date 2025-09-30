@@ -59,6 +59,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     toSend += "[" + str(res[0]) + "," + str(res[1]) + "];"
                 # structure "[x,y];[x,y];[x,y];"
 
+            print(toSend)
             connection.sendall(toSend.encode())
 
             if cv.waitKey(1) == ord("q"):  # gets the unicode value for q

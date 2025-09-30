@@ -6,14 +6,14 @@ import sys
 import os
 import regex as re
 
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  #ai help
-
 
 # https://github.com/deirvlon/Python-TCP-Image/tree/master
 # chatgpt help for encoding the image
 pattern = re.compile(r"((\d+),(\d+))")
-def client_tick(cap, socket, data) -> bool:  # returns if you should break
+
+
+def client_tick(cap, socket):  # returns if you should break
     ret, frame = cap.read()
 
     frame = cv.resize(frame, (640, 384), interpolation=cv2.INTER_AREA)
@@ -35,13 +35,15 @@ def client_tick(cap, socket, data) -> bool:  # returns if you should break
             entry = [int(pt[1]), int(pt[2])]
             pts.append(entry)
         # print(points)
-        data["points"] = pts
+        data = pts
     else:
-        data["points"] = info
+        data = info
 
-    if cv.waitKey(1) == ord("q"):  # gets the unicode value for q
-        cap.release()
-        cv.destroyAllWindows()
-        return True
+    return data
 
-    return False
+    # if cv.waitKey(1) == ord("q"):  # gets the unicode value for q
+    #     cap.release()
+    #     cv.destroyAllWindows()
+    #     return True
+    #
+    # return False
