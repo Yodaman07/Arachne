@@ -27,6 +27,7 @@ import threading
 import maestro_extended
 import time
 import networking.client as Client
+import regex as re
 
 
 class ArachneController:
@@ -45,7 +46,6 @@ class ArachneController:
 
         self.autonomous = False  # teleop mode for default
         self.pause_event = threading.Event()
-
 
         # Initializing all leg ids
         self.all_legs = (2, 3, 4, 5, 1, 0)
@@ -198,8 +198,10 @@ class ArachneController:
         muscle_up = False
         # busy = False
 
-        data = {"point": "NA"}
+        data = {"points": []}
         autonomousThread = threading.Thread(target=self.controller_mixin, args=data)
+        autonomousThread.start()
+        self.pause_event.clear()  # by default start thread and then pause it
         cap = cv.VideoCapture(0)
 
         while True:
@@ -214,10 +216,10 @@ class ArachneController:
                 elif event.type == pygame.JOYBUTTONUP:
                     if event.dict['button'] == 2:  # triangle
                         self.autonomous = not self.autonomous
-                        if self.autonomous and not autonomousThread.is_alive():
-                            autonomousThread.start()
-                        elif not self.autonomous: self.pause_event.clear()
-                        elif self.autonomous: self.pause_event.set()
+                        if not self.autonomous:
+                            self.pause_event.clear()  # pauses auto
+                        else:
+                            self.pause_event.set()  # starts autonomous
 
                         status = "on" if self.autonomous else "off"
                         print(f"Toggling Autonomous, status is now {status}")
@@ -390,13 +392,22 @@ class ArachneController:
             # time.sleep(delay)
 
     def controller_mixin(self, pt):  # points is a String to be parsed
+        print("Init Thread")
         # Pt Key:
-        # Formatted like {"point": ___}, Options are: "NA", "(_,_)" <- actual point
+        # Formatted like {"points": [[x,y],[x,y],[x,y]]}, Options are: "NA", "[_,_]" <- actual point
         while True:
             self.pause_event.wait()
+
             if pt[0] == "NA":  # scanning for an object
                 print("TURN")
                 self.crab_walk_turn(10)
             else:
+                print(pt[0])  # if multiple points try to walk in between them, only sending one for now though
                 print("CRAB WALK")
+                x, y = pt[0][0][0], pt[0][0][1]
+                if x < (320-20): # width is 640, # turn right
+                    self.crab_walk_turn(10)
+                elif x > (320+20):  # turn left
+                    self.crab_walk_turn(-10)
+
                 self.crab_walk_2(0, 30, 1)

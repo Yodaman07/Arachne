@@ -4,6 +4,7 @@ import cv2
 import cv2 as cv
 import sys
 import os
+import regex as re
 
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  #ai help
@@ -11,6 +12,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  #a
 
 # https://github.com/deirvlon/Python-TCP-Image/tree/master
 # chatgpt help for encoding the image
+pattern = re.compile(r"((\d+),(\d+))")
 def client_tick(cap, socket, data) -> bool:  # returns if you should break
     ret, frame = cap.read()
 
@@ -25,9 +27,14 @@ def client_tick(cap, socket, data) -> bool:  # returns if you should break
     # > L is big-endian format, and L is a long which has a certain size of 4 bytes - can be used for a certain size when unpacking
     socket.sendall(img_bytes)  # Then send image
 
-    points = socket.recv(1024).decode()
+    info = socket.recv(1024).decode()
+    result = pattern.findall(info)
+    pts = []
+    for pt in result:
+        entry = [int(pt[1]), int(pt[2])]
+        pts.append(entry)
     # print(points)
-    data["point"] = points
+    data["points"] = pts
 
     if cv.waitKey(1) == ord("q"):  # gets the unicode value for q
         cap.release()

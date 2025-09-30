@@ -53,9 +53,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
             toSend = ""
             try:
-                toSend += ("" + str(result[0]) + "," + str(result[1]))  # pairing up the x and y coords
+                # structure "[x,y];[x,y];[x,y];"
+                for res in result:
+                    toSend += "[" + str(res[0]) + "," + str(res[1]) + "];"
             except IndexError:
                 toSend += "NA"
+
 
             connection.sendall(toSend.encode())
 
