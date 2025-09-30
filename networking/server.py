@@ -52,13 +52,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             cv.imshow("stream", img)
 
             toSend = ""
-            try:
-                # structure "[x,y];[x,y];[x,y];"
+            if not result:
+                toSend += "NA"
+            else:
                 for res in result:
                     toSend += "[" + str(res[0]) + "," + str(res[1]) + "];"
-            except IndexError:
-                toSend += "NA"
-
+                # structure "[x,y];[x,y];[x,y];"
 
             connection.sendall(toSend.encode())
 

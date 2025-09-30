@@ -6,8 +6,7 @@ from ultralytics import YOLO
 class YoloVision:
     def __init__(self):
         self.model = YOLO("vision/yolov8n.pt")
-        self.obj_filter = [
-            "bottle"]  # filter so only these objects get sent to the client and are highlighted (if left empty, anything will work)
+        self.obj_filter = ["bottle"]  # filter so only these objects get sent to the client and are highlighted (if left empty, anything will work)
         self.to_send = []
         self.last_sent = []
         self.tolerance = 5  # 10%
@@ -51,6 +50,7 @@ class YoloVision:
                 biggestIndex = index
         self.to_send = [self.to_send[biggestIndex]]
         print(self.to_send)
+
         # for item in self.to_send: #measures based on tolerance
         #     for last_item in self.last_sent:
         #         diff_x = abs(last_item[0] - item[0])

@@ -28,13 +28,16 @@ def client_tick(cap, socket, data) -> bool:  # returns if you should break
     socket.sendall(img_bytes)  # Then send image
 
     info = socket.recv(1024).decode()
-    result = pattern.findall(info)
-    pts = []
-    for pt in result:
-        entry = [int(pt[1]), int(pt[2])]
-        pts.append(entry)
-    # print(points)
-    data["points"] = pts
+    if info != "NA":
+        result = pattern.findall(info)
+        pts = []
+        for pt in result:
+            entry = [int(pt[1]), int(pt[2])]
+            pts.append(entry)
+        # print(points)
+        data["points"] = pts
+    else:
+        data["points"] = info
 
     if cv.waitKey(1) == ord("q"):  # gets the unicode value for q
         cap.release()
